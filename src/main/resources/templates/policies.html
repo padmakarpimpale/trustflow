@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>TrustFlow</title>
+    <link rel="stylesheet" th:href="@{/style.css}" />
+  </head>
+  <body>
+    <header th:replace="~{fragments :: nav}"></header>
+    <main>
+      <p class="notice" th:if="${aiMode == 'demo'}">
+        Offline demonstration: recommendations use explicit demo rules, not a trained AI model.
+      </p>
+      <p class="success" th:if="${success}" th:text="${success}"></p>
+      <p class="error" th:if="${error}" th:text="${error}"></p>
+      <h1>Escalation policies</h1>
+      <p>
+        Changes apply to new cases. Existing cases retain their original routing decision and policy
+        version.
+      </p>
+      <section class="grid">
+        <form
+          class="panel"
+          th:each="p : ${policies}"
+          th:action="@{/admin/policies/{id}(id=${p.id})}"
+          method="post"
+        >
+          <h2 th:text="${p.type}"></h2>
+          <input name="version" type="hidden" th:value="${p.version}" /><label
+            >Expense amount threshold (SGD)<input
+              name="amountThreshold"
+              type="number"
+              min="0"
+              max="9999999999.99"
+              step="0.01"
+              th:value="${p.amountThreshold}"
+              required /></label
+          ><label
+            >Minimum model score<input
+              name="minConfidence"
+              type="number"
+              min="0"
+              max="1"
+              step="0.01"
+              th:value="${p.minConfidence}"
+              required /></label
+          ><label class="check"
+            ><input
+              name="alwaysReview"
+              type="checkbox"
+              value="true"
+              th:checked="${p.alwaysReview}"
+            />Always require human review</label
+          >
+          <p>Privileged IT access and AI failures always require review.</p>
+          <button>Save policy</button>
+        </form>
+      </section>
+    </main>
+    <footer>TrustFlow · Enterprise Application Development</footer>
+  </body>
+</html>

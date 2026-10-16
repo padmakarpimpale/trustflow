@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>TrustFlow</title>
+    <link rel="stylesheet" th:href="@{/style.css}" />
+  </head>
+  <body>
+    <header th:replace="~{fragments :: nav}"></header>
+    <main>
+      <p class="notice" th:if="${aiMode == 'demo'}">
+        Offline demonstration: recommendations use explicit demo rules, not a trained AI model.
+      </p>
+      <p class="success" th:if="${success}" th:text="${success}"></p>
+      <p class="error" th:if="${error}" th:text="${error}"></p>
+      <h1>Case dashboard</h1>
+      <p>Track decisions and cases waiting for human review.</p>
+      <section class="stats">
+        <article>Total<strong th:text="${total}"></strong></article>
+        <article>Pending review<strong th:text="${pending}"></strong></article>
+        <article>Approved<strong th:text="${approved}"></strong></article>
+        <article>Rejected<strong th:text="${rejected}"></strong></article>
+      </section>
+      <p
+        th:if="${reviewCount != null}"
+        th:text="${'Human reviews: ' + reviewCount + ' · Overrides: ' + overrides + ' · Average time to human decision: ' + reviewMinutes + ' minutes'}"
+      ></p>
+      <div class="table">
+        <table>
+          <thead>
+            <tr>
+              <th>Case</th>
+              <th>Type</th>
+              <th>Owner</th>
+              <th>Status</th>
+              <th>Created UTC</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="c : ${cases}">
+              <td>
+                <a th:href="@{/cases/{id}(id=${c.id})}" th:text="${'#' + c.id + ' ' + c.title}"></a>
+              </td>
+              <td th:text="${c.type}"></td>
+              <td th:text="${c.owner.username}"></td>
+              <td><span class="badge" th:text="${c.status}"></span></td>
+              <td th:text="${#temporals.format(c.createdAt, 'dd MMM yyyy HH:mm', 'UTC')}"></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(cases)}">
+              <td colspan="5">No cases yet. Sign in as an employee to submit one.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+    <footer>TrustFlow · Enterprise Application Development</footer>
+  </body>
+</html>

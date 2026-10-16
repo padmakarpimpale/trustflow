@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>TrustFlow</title>
+    <link rel="stylesheet" th:href="@{/style.css}" />
+  </head>
+  <body>
+    <main class="login">
+      <h1>TrustFlow</h1>
+      <p>Human review and decision history in one place.</p>
+      <p class="error" th:if="${param.error}">Incorrect username or password.</p>
+      <p th:if="${param.logout}">You have signed out.</p>
+      <form th:action="@{/login}" method="post">
+        <label>Username<input name="username" autocomplete="username" required autofocus /></label
+        ><label
+          >Password<input
+            type="password"
+            name="password"
+            autocomplete="current-password"
+            required /></label
+        ><button>Sign in</button>
+      </form>
+      <p>Use the demonstration accounts listed in the project README.</p>
+    </main>
+  </body>
+</html>

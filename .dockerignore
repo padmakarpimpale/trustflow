@@ -1,0 +1,9 @@
+target
+data
+.git
+.idea
+**/.venv
+**/__pycache__
+frontend/node_modules
+ai-service/.venv
+ai-service/__pycache__

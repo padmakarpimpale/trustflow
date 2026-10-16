@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>TrustFlow</title>
+    <link rel="stylesheet" th:href="@{/style.css}" />
+  </head>
+  <body>
+    <main>
+      <h1>Unable to complete this action</h1>
+      <p th:text="${message}"></p>
+      <a th:href="@{/}">Return to dashboard</a>
+    </main>
+  </body>
+</html>

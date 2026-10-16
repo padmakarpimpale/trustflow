@@ -1,0 +1,201 @@
+{
+  "modelVersion": "tfidf-lr-v2-b532561f6e",
+  "trainingRows": 90,
+  "testRows": 30,
+  "dataset": "Manually authored synthetic coursework scenarios, not real claims",
+  "limitations": "Small related-vocabulary holdout; not independent real-world validation. Scores are uncalibrated. No automatic learning from reviewer decisions.",
+  "sklearnVersion": "1.6.1",
+  "trainingSha256": "b532561f6e2d447be9ebd7da0cb677efc2d7c8826303dcbd20ae6729437530bf",
+  "accuracy": 1.0,
+  "classificationReport": {
+    "APPROVE": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 10.0
+    },
+    "REJECT": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 10.0
+    },
+    "REVIEW": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 10.0
+    },
+    "accuracy": 1.0,
+    "macro avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 30.0
+    },
+    "weighted avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 30.0
+    }
+  },
+  "labels": ["APPROVE", "REJECT", "REVIEW"],
+  "confusionMatrix": [
+    [10, 0, 0],
+    [0, 10, 0],
+    [0, 0, 10]
+  ],
+  "predictions": [
+    {
+      "text": "Customer workshop train tickets with a valid receipt and supervisor approval",
+      "actual": "APPROVE",
+      "predicted": "APPROVE"
+    },
+    {
+      "text": "Approved office stationery purchase for the team project",
+      "actual": "APPROVE",
+      "predicted": "APPROVE"
+    },
+    {
+      "text": "Read only reporting access authorised by the system owner for assigned work",
+      "actual": "APPROVE",
+      "predicted": "APPROVE"
+    },
+    {
+      "text": "Registration fee for approved professional training relevant to my role",
+      "actual": "APPROVE",
+      "predicted": "APPROVE"
+    },
+    {
+      "text": "Invoice for required work software approved by procurement",
+      "actual": "APPROVE",
+      "predicted": "APPROVE"
+    },
+    {
+      "text": "Taxi transport to a business meeting with customer receipt attached",
+      "actual": "APPROVE",
+      "predicted": "APPROVE"
+    },
+    {
+      "text": "Laptop repair for work authorised by IT and supported by invoice",
+      "actual": "APPROVE",
+      "predicted": "APPROVE"
+    },
+    {
+      "text": "Manager approved accommodation for the official client visit",
+      "actual": "APPROVE",
+      "predicted": "APPROVE"
+    },
+    {
+      "text": "Project documentation courier expense with receipt and business purpose",
+      "actual": "APPROVE",
+      "predicted": "APPROVE"
+    },
+    {
+      "text": "Standard project repository access approved by the lead",
+      "actual": "APPROVE",
+      "predicted": "APPROVE"
+    },
+    {
+      "text": "Personal cinema subscription with no connection to my work",
+      "actual": "REJECT",
+      "predicted": "REJECT"
+    },
+    {
+      "text": "I already received reimbursement for this receipt but want to claim it again",
+      "actual": "REJECT",
+      "predicted": "REJECT"
+    },
+    {
+      "text": "Request to bypass authentication on another employee account",
+      "actual": "REJECT",
+      "predicted": "REJECT"
+    },
+    {
+      "text": "Private family holiday accommodation unrelated to business",
+      "actual": "REJECT",
+      "predicted": "REJECT"
+    },
+    {
+      "text": "Personal clothing purchase claimed as an office cost",
+      "actual": "REJECT",
+      "predicted": "REJECT"
+    },
+    {
+      "text": "Invented taxi receipt for travel that did not happen",
+      "actual": "REJECT",
+      "predicted": "REJECT"
+    },
+    {
+      "text": "Disable audit logging to access confidential records without permission",
+      "actual": "REJECT",
+      "predicted": "REJECT"
+    },
+    {
+      "text": "Private birthday dinner for my family charged to the company",
+      "actual": "REJECT",
+      "predicted": "REJECT"
+    },
+    {
+      "text": "Personal gaming membership used only at home",
+      "actual": "REJECT",
+      "predicted": "REJECT"
+    },
+    {
+      "text": "Duplicate submission of an invoice that finance already paid",
+      "actual": "REJECT",
+      "predicted": "REJECT"
+    },
+    {
+      "text": "Travel invoice has missing details and the purpose needs clarification",
+      "actual": "REVIEW",
+      "predicted": "REVIEW"
+    },
+    {
+      "text": "Temporary production administrator access for an urgent investigation",
+      "actual": "REVIEW",
+      "predicted": "REVIEW"
+    },
+    {
+      "text": "The amount on the receipt differs from the requested reimbursement",
+      "actual": "REVIEW",
+      "predicted": "REVIEW"
+    },
+    {
+      "text": "Business meal without attendee details or manager confirmation",
+      "actual": "REVIEW",
+      "predicted": "REVIEW"
+    },
+    {
+      "text": "Unclear access scope awaiting the system owner response",
+      "actual": "REVIEW",
+      "predicted": "REVIEW"
+    },
+    {
+      "text": "Combined personal and business travel costs without a breakdown",
+      "actual": "REVIEW",
+      "predicted": "REVIEW"
+    },
+    {
+      "text": "Emergency purchase awaiting retrospective approval from the manager",
+      "actual": "REVIEW",
+      "predicted": "REVIEW"
+    },
+    {
+      "text": "Policy exception requested for an unusual supplier charge",
+      "actual": "REVIEW",
+      "predicted": "REVIEW"
+    },
+    {
+      "text": "The receipt cannot be read and needs verification",
+      "actual": "REVIEW",
+      "predicted": "REVIEW"
+    },
+    {
+      "text": "Conference relevance is uncertain and approval is pending",
+      "actual": "REVIEW",
+      "predicted": "REVIEW"
+    }
+  ]
+}

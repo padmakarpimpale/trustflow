@@ -1,0 +1,34 @@
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: trustflow
+      MYSQL_USER: trustflow
+      MYSQL_PASSWORD: ${DB_PASSWORD:-coursework-demo-only}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-local-root-demo-only}
+    ports: ["127.0.0.1:3307:3306"]
+    volumes: ["mysql-data:/var/lib/mysql"]
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+  app:
+    build: .
+    ports: ["127.0.0.1:8080:8080"]
+    environment:
+      SPRING_PROFILES_ACTIVE: mysql
+      DB_URL: jdbc:mysql://mysql:3306/trustflow
+      TRUSTFLOW_AI_URL: http://ai:8000/predict
+      DB_USER: trustflow
+      DB_PASSWORD: ${DB_PASSWORD:-coursework-demo-only}
+    depends_on:
+      ai:
+        condition: service_started
+      mysql:
+        condition: service_healthy
+  ai:
+    build: ./ai-service
+    ports: ["127.0.0.1:8000:8000"]
+volumes:
+  mysql-data:

@@ -1,0 +1,91 @@
+text,label
+Taxi fare for a client meeting approved by my manager with receipt attached,APPROVE
+Business travel by train to deliver a customer workshop with manager approval,APPROVE
+Conference registration for work related training approved by the department,APPROVE
+Office supplies required for the team project with an itemised invoice,APPROVE
+Software subscription required for project delivery with procurement approval,APPROVE
+Standard read only access to business reporting approved by my manager,APPROVE
+Reimbursement for transport to an official customer visit with a valid receipt,APPROVE
+Hotel accommodation during an approved business trip invoice included,APPROVE
+Printer paper purchased for the office with a receipt and supervisor approval,APPROVE
+Team equipment for an approved project charged to the allocated budget,APPROVE
+Read access to the sales dashboard for monthly reporting authorised by the owner,APPROVE
+Approved professional certification training related to my current work,APPROVE
+Client meeting lunch within the company policy with attendees and receipt recorded,APPROVE
+Travel expenses for an approved onsite installation at the customer office,APPROVE
+Renewal of the team development tool subscription approved by procurement,APPROVE
+Work mobile data used during a business trip with a supporting invoice,APPROVE
+Standard access to the project repository approved by the team lead,APPROVE
+Read only access to inventory records for my assigned reporting duties,APPROVE
+Approved course fee for professional development relevant to the project,APPROVE
+Courier fee for sending company documents to a client receipt attached,APPROVE
+Office keyboard replacement approved by the manager with purchase receipt,APPROVE
+Business mileage for customer visits with the approved travel log,APPROVE
+Company laptop repair authorised by IT with an itemised invoice,APPROVE
+Meeting room rental for an approved client workshop with booking receipt,APPROVE
+Standard access to the internal knowledge base required for my assigned role,APPROVE
+Read only project dashboard permission approved by the system owner,APPROVE
+Approved hotel and transport costs for an official work conference,APPROVE
+Stationery for the office purchased under the approved team budget,APPROVE
+Work related software licence required for the approved customer project,APPROVE
+Authorised travel to a partner meeting with documented business purpose,APPROVE
+Personal holiday flights for my family unrelated to any business work,REJECT
+Private shopping expense for clothes used outside work,REJECT
+Personal gaming subscription for entertainment at home,REJECT
+Duplicate claim for an invoice already reimbursed last month,REJECT
+Private family dinner claimed as a company meal,REJECT
+Unauthorised access to another employee account without their consent,REJECT
+Request to bypass security approval and disable audit logging,REJECT
+Personal streaming subscription unrelated to my job,REJECT
+Fake receipt created to claim expenses that did not occur,REJECT
+Private vacation hotel stay with no business purpose,REJECT
+Shopping for personal shoes charged to the company,REJECT
+Already paid expense submitted again for a second reimbursement,REJECT
+Access to confidential payroll data without authorisation or job need,REJECT
+Bypass password protection to view a colleague private files,REJECT
+Personal birthday party costs unrelated to work,REJECT
+Private gym membership for personal use outside the employee benefits policy,REJECT
+Family entertainment tickets claimed as a business expense,REJECT
+Duplicate taxi receipt that has already been paid,REJECT
+Request to share another employee login credentials without permission,REJECT
+Disable security monitoring so my access is not recorded,REJECT
+Personal furniture purchase for private use with no work connection,REJECT
+Vacation car rental for a private family trip,REJECT
+Alter the receipt amount to receive a larger reimbursement,REJECT
+Unauthorised administrator access to export confidential customer records,REJECT
+Expense for personal groceries with no business purpose,REJECT
+Double reimbursement requested for the same hotel invoice,REJECT
+Private gaming equipment purchased for personal entertainment,REJECT
+Access a former colleague account by bypassing authentication,REJECT
+Claim for fabricated travel that never happened,REJECT
+Personal streaming and movie purchases unrelated to business,REJECT
+Business purpose unclear and supporting details are missing,REVIEW
+Missing receipt for travel expense need manager clarification,REVIEW
+Exception requested to company policy awaiting supervisor decision,REVIEW
+Temporary administrator privileges requested for urgent incident investigation,REVIEW
+Unusual request requires verification of the business justification,REVIEW
+Amount disputed and the explanation is incomplete,REVIEW
+Conference relevance to my role is uncertain awaiting manager confirmation,REVIEW
+Receipt total does not match the amount claimed please investigate,REVIEW
+Access scope not specified need clarification from the system owner,REVIEW
+Emergency expense without prior approval requires retrospective review,REVIEW
+Hotel invoice missing and the business travel dates are unclear,REVIEW
+Conflicting information about whether this expense was already paid,REVIEW
+Mixed personal and business costs need allocation before approval,REVIEW
+Sensitive system access requested with an unclear business requirement,REVIEW
+Elevated privileges needed temporarily but duration is not specified,REVIEW
+Manager approval is still pending for this training request,REVIEW
+Receipt is unreadable and the supplier details need verification,REVIEW
+Policy exception for a last minute booking needs approval,REVIEW
+Unclear project assignment requesting access for unspecified duties,REVIEW
+Unusual overseas payment with missing supporting documentation,REVIEW
+The expense category is ambiguous and needs finance clarification,REVIEW
+Urgent production administrator access pending security approval,REVIEW
+Business trip includes private travel and the amounts are not separated,REVIEW
+Vendor invoice is incomplete and purchase authorisation is uncertain,REVIEW
+Request to extend access beyond the approved period requires review,REVIEW
+The reimbursement amount is disputed by the employee and finance team,REVIEW
+Missing attendee list for a claimed business meal,REVIEW
+Project purpose not confirmed by the manager yet,REVIEW
+Temporary elevated access for troubleshooting requires owner verification,REVIEW
+Claim includes an unclear surcharge that needs an explanation,REVIEW
