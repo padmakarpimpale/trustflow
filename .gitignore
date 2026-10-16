@@ -1,0 +1,11 @@
+target/
+data/
+.idea/
+*.iml
+.env
+.venv/
+__pycache__/
+.pytest_cache/
+/frontend/node_modules/
+/ai-service/.venv/
+/ai-service/__pycache__/
