@@ -124,16 +124,20 @@ public class CaseService {
         );
         notifications.send(
             owner,
-            record.getId(),
-            "Case #" + record.getId() + ": " + record.getStatus()
+            record,
+            record.getStatus() == CaseStatus.APPROVED ? "CASE_APPROVED" : "CASE_SUBMITTED",
+            "Case #" + record.getId() + ": " + record.getStatus(),
+            null
         );
         if (
             record.getStatus() == CaseStatus.PENDING_REVIEW
         ) for (UserAccount reviewer : users.findByRole(Role.REVIEWER))
             notifications.send(
                 reviewer,
-                record.getId(),
-                "Case #" + record.getId() + " needs review"
+                record,
+                "REVIEW_REQUIRED",
+                "Case #" + record.getId() + " needs review",
+                null
             );
         return record;
     }
@@ -181,8 +185,10 @@ public class CaseService {
         );
         notifications.send(
             record.getOwner(),
-            id,
-            "Case #" + id + " was " + decision.toString().toLowerCase()
+            record,
+            decision == CaseStatus.APPROVED ? "CASE_APPROVED" : "CASE_REJECTED",
+            "Case #" + id + " was " + decision.toString().toLowerCase(),
+            form.reason().trim()
         );
         cases.flush(); // @Version rejects a concurrent update; the whole transaction then rolls
         // back.

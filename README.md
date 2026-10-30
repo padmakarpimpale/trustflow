@@ -120,7 +120,7 @@ H2 files are under `data/` relative to Java's working directory. Use the same wo
 
 ## Database migrations, export and restore
 
-Fresh MySQL installations run Flyway V1/V2, then Hibernate validates the schema. Existing unmanaged MySQL databases are not automatically baselined. Back up first and follow `database/UPGRADE.md`; do not delete existing data to bypass migration errors.
+Fresh MySQL installations run Flyway V1/V2/V3, then Hibernate validates the schema. Existing unmanaged MySQL databases are not automatically baselined. Back up first and follow `database/UPGRADE.md`; do not delete existing data to bypass migration errors.
 
 With MySQL client tools on PATH, export from the host (the Docker MySQL host port is 3307):
 
@@ -175,3 +175,56 @@ The additional synthetic challenge set classified 14 of 18 examples correctly (7
 The classifier learns from 90 synthetic training examples. The 30-example synthetic holdout shares similar vocabulary and does not establish real-world accuracy. An additional 18-example challenge evaluation reports errors, log loss, Brier score and hypothetical score-only routing; it is also synthetic, not external validation. Scores are uncalibrated and must not be described as verified accuracy. Reviewer decisions do not automatically retrain the model.
 
 This project demonstrates controlled automation, human escalation and traceable decisions for expense and access requests. It does not reimburse money, provision access, check attachments, provide a tamper-proof audit ledger or run a highly available Kafka cluster. Request IDs support log correlation, not full distributed tracing. Future applications could include procurement approval and document triage after domain-specific data collection, evaluation and integration.
+
+## Optional Gmail notifications
+
+Add `compose.email.yaml` to the existing MySQL/Kafka stack to enable email. It uses Spring Mail and a second Kafka consumer group, `trustflow-email`. The existing `trustflow-notifications` group continues to create in-app notifications independently.
+
+Three events send email: REVIEW_REQUIRED to the configured reviewer, CASE_APPROVED to the employee (automatic or human approval), and CASE_REJECTED to the employee with the reviewer's reason. Pending-submission acknowledgements stay in-app only. By default, only the demo accounts `employee` and `reviewer` are mapped to `EMAIL_DEMO_TO`. They can share your own inbox for a demonstration; `employee2`, `reviewer2` and `admin` do not send emails unless separately configured. Multiple in-app rows for different recipients are not duplicates.
+
+### Enable real email locally
+
+1. Enable Google 2-Step Verification and create a Google App Password for TrustFlow at https://myaccount.google.com/apppasswords . The option may be unavailable for restricted accounts. Use an app password, not your normal Google password. Do not share it in chat, screenshots or GitHub.
+2. Update your checkout on `feature/architecture-upgrade` with `git pull --ff-only`.
+3. Copy `.env.email.example` to `.env` in the project root. If you already have `.env`, keep its existing database settings and add the email settings instead of overwriting it.
+4. Set `SMTP_USERNAME` to your Gmail address, `SMTP_PASSWORD` to the app password without display spaces, and `EMAIL_DEMO_TO` to your own destination inbox. For the demo, sender and destination can be the same Gmail account.
+5. Rebuild/start with all three files:
+
+```powershell
+docker compose -f compose.yaml -f compose.integrated.yaml -f compose.email.yaml up --build -d
+```
+
+Flyway applies additive migration V3 to the existing MySQL database; keep the existing Docker volume. It creates `email_delivery` and widens the outbox payload. No existing cases are deleted. After readiness is UP, log in as `employee`, submit an expense above SGD500 under default policy, then review it as `reviewer`. Check your Gmail Inbox and Spam folder for the review request and the final decision. A local URL in the email opens on the computer running TrustFlow; localhost links will not reach that computer from a phone.
+
+Google may limit or block SMTP submission depending on account policy and sending limits. No paid email provider is required for this small demonstration. Reference: https://support.google.com/accounts/answer/185833 . Gmail SMTP uses STARTTLS on port 587; connection, read and write timeouts are bounded.
+
+Do not paste the output of `docker compose config` or container environment inspection into chat when real credentials are set: those can reveal secrets. `.env` is excluded from Git and Docker build context, but remains a local plaintext credential file accessible to you and Docker.
+
+### Delivery status and retries
+
+The email Kafka consumer first saves one database delivery row per event. A scheduled sender tries pending deliveries, separately from Kafka consumption. This prevents a slow SMTP server from blocking the in-app consumer or case submission. The table contains event-time content, so a delayed review request may describe an earlier status; recipients must sign in to see the current case.
+
+```sql
+SELECT id, case_id, username, recipient, status, attempts, last_error, sent_at
+FROM email_delivery ORDER BY id DESC LIMIT 10;
+```
+
+`PENDING` means waiting or retrying. `SENT` means SMTP accepted the message, not verified inbox delivery or reading. `FAILED` means five attempts were exhausted. Retry delays are 30, 60, 120 and 240 seconds. Only exception class names are recorded, not SMTP responses or credentials. Failed records remain for inspection; this version has no retry button. After fixing configuration, a new demo case is the simplest way to verify delivery again.
+
+Repeated Kafka delivery is deduplicated by event ID and recipient locking. A crash between SMTP acceptance and the database commit can still send the same email twice: this is not an exactly-once email guarantee. Invalid messages or exhausted Kafka intake retries go to a separate `trustflow-notifications.email.DLT` topic. Legacy events without an email event type are ignored by the email consumer. Typed events accumulated while email was disabled may be sent when enabled later; enabling email is not restricted to future cases.
+
+To disable sending, recreate the app using just the original two Compose files:
+
+```powershell
+docker compose -f compose.yaml -f compose.integrated.yaml up -d app
+```
+
+### Local SMTP test without external delivery
+
+`compose.email-test.yaml` enables Mailpit, a local SMTP capture server. It does not send to Gmail. Do not combine this file with `compose.email.yaml`.
+
+```powershell
+docker compose -f compose.yaml -f compose.integrated.yaml -f compose.email-test.yaml up --build -d
+```
+
+Captured messages appear at http://localhost:8025 . CI uses this mode to verify actual SMTP submission, independent in-app delivery during SMTP outages, retry/recovery, email content and replay protection. It does not prove Gmail inbox delivery. `scripts/email-integration-check.py` is for an isolated test stack after `scripts/integration-check.py`, not your live demonstration database.

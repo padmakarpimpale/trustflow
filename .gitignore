@@ -12,3 +12,6 @@ __pycache__/
 
 /test-results/
 /database/trustflow-mysql-dump.sql
+
+.env.*
+!.env.email.example

@@ -1,0 +1,19 @@
+# Local SMTP capture only: no external email is sent. Used by automated tests.
+services:
+  app:
+    environment:
+      EMAIL_ENABLED: "true"
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      SMTP_USERNAME: demo@trustflow.test
+      SMTP_PASSWORD: ""
+      SMTP_AUTH: "false"
+      SMTP_STARTTLS: "false"
+      EMAIL_DEMO_TO: inbox@trustflow.test
+      TRUSTFLOW_EMAIL_RETRY_SECONDS: "2"
+    depends_on:
+      mailpit:
+        condition: service_started
+  mailpit:
+    image: axllent/mailpit:v1.32.0
+    ports: ["127.0.0.1:8025:8025"]

@@ -68,8 +68,8 @@ class Client:
 
 def main():
     wait_for('Spring Boot and MySQL readiness', lambda: urllib.request.urlopen(BASE + '/actuator/health/readiness', timeout=3).status == 200, 240)
-    assert sql('SELECT COUNT(*) FROM flyway_schema_history WHERE success = 1') == '2'
-    results.append('Flyway V1/V2 applied and Hibernate validation passed')
+    assert sql('SELECT COUNT(*) FROM flyway_schema_history WHERE success = 1') == '3'
+    results.append('Flyway V1/V2/V3 applied and Hibernate validation passed')
     employee, other, reviewer, admin = [Client(x) for x in ['employee','employee2','reviewer','admin']]
     low = employee.expense('Business travel expense')
     assert low['status'] == 'APPROVED', low
@@ -131,7 +131,7 @@ def main():
     dump = compose('exec', '-T', 'mysql', 'sh', '-c', 'exec mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" --single-transaction --no-tablespaces --set-gtid-purged=OFF trustflow')
     sql('CREATE DATABASE trustflow_restore')
     compose('exec', '-T', 'mysql', 'sh', '-c', 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" trustflow_restore', data=dump)
-    for table in ['app_user','review_policy','case_record','review_record','audit_entry','notification','outbox_event','policy_change','flyway_schema_history']:
+    for table in ['app_user','review_policy','case_record','review_record','audit_entry','notification','outbox_event','policy_change','email_delivery','flyway_schema_history']:
         assert sql('SELECT COUNT(*) FROM '+table) == sql('SELECT COUNT(*) FROM '+table, 'trustflow_restore'), table
     results.append('MySQL dump restored into a separate database with matching table counts')
     Path('test-results').mkdir(exist_ok=True)

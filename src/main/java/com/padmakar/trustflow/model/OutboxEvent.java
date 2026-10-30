@@ -14,7 +14,7 @@ public class OutboxEvent {
     @Column(nullable = false, unique = true, length = 36)
     private String eventId;
 
-    @Column(nullable = false, length = 2000)
+    @Column(nullable = false, length = 12000)
     private String payload;
 
     private boolean published;

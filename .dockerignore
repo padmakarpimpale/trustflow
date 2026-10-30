@@ -7,3 +7,6 @@ data
 frontend/node_modules
 ai-service/.venv
 ai-service/__pycache__
+
+.env
+.env.*
