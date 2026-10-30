@@ -166,6 +166,10 @@ Java tests cover routing, security, validation, concurrent review, policy snapsh
 
 GitHub Actions also starts the full MySQL/Kafka Compose stack and runs `scripts/integration-check.py`. This checks migrations, real-model routing, Kafka outage/recovery, duplicate delivery, poison messages, AI failure, restart persistence and dump/restore. Run it only against a fresh isolated demonstration stack: it creates cases, changes policy, stops services and creates `trustflow_restore`. Its output and service logs are uploaded as `integrated-evidence`. Check the actual workflow result before treating these checks as passed.
 
+Verified on 30 October 2026: 54 Java tests, five Python tests and 16 browser workflow checks passed. The [full-stack CI run](https://github.com/padmakarpimpale/trustflow/actions/runs/40994889018) passed with real MySQL and Kafka, including recovery and restore. Its `integrated-evidence` artifact contains service logs, results and a test database dump. Windows PowerShell helper scripts were reviewed but were not executed on Windows in that run.
+
+The additional synthetic challenge set classified 14 of 18 examples correctly (77.8%). A score-only gate would admit one example labelled for review, which is why model scores are not the sole approval condition. This is a small diagnostic set, not a deployment accuracy estimate.
+
 ## Scope and limitations
 
 The classifier learns from 90 synthetic training examples. The 30-example synthetic holdout shares similar vocabulary and does not establish real-world accuracy. An additional 18-example challenge evaluation reports errors, log loss, Brier score and hypothetical score-only routing; it is also synthetic, not external validation. Scores are uncalibrated and must not be described as verified accuracy. Reviewer decisions do not automatically retrain the model.

@@ -10,8 +10,7 @@ if ($Database -notmatch '^[A-Za-z0-9_]+$' -or $Database -eq "trustflow") {
     throw "Restore into a new database, not the running trustflow database."
 }
 $path = (Resolve-Path $InputFile).Path.Replace('\', '/')
-if ($path -match '[;
-]') { throw "Unsupported dump path" }
+if ($path -match '[\x00-\x1f;]') { throw "Unsupported dump path" }
 # CREATE DATABASE intentionally fails if the target already exists.
 & mysql --host=$DatabaseHost --port=$Port --user=$Username --password `
     --execute="CREATE DATABASE $Database;"

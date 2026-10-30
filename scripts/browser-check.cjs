@@ -39,17 +39,24 @@ async function ready(url) {
   await ready("http://127.0.0.1:18000/health");
   await ready("http://127.0.0.1:18080/app/index.html");
   browser = await chromium.launch({
-    ...(process.env.BROWSER_EXECUTABLE ? { executablePath: process.env.BROWSER_EXECUTABLE } : {}),
+    ...(process.env.BROWSER_EXECUTABLE
+      ? { executablePath: process.env.BROWSER_EXECUTABLE }
+      : {}),
     headless: true,
     args: ["--no-sandbox"],
   });
-  const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  const page = await browser.newPage({
+    viewport: { width: 1440, height: 1000 },
+  });
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("http://127.0.0.1:18080/app/index.html");
   await page.getByRole("heading", { name: "Welcome back" }).waitFor();
   assert.equal(await page.getByText("Local demonstration accounts").count(), 0);
-  assert.equal(await page.getByText("TrustFlow123!", { exact: true }).count(), 0);
+  assert.equal(
+    await page.getByText("TrustFlow123!", { exact: true }).count(),
+    0,
+  );
   await page.screenshot({ path: path.join(qa, "login.png"), fullPage: true });
   async function signIn(user) {
     await page.getByLabel("Username", { exact: true }).fill(user);
@@ -67,10 +74,16 @@ async function ready(url) {
         const csrf = await (await fetch("/api/csrf")).json();
         const r = await fetch(path, {
           method,
-          headers: { "Content-Type": "application/json", [csrf.headerName]: csrf.token },
+          headers: {
+            "Content-Type": "application/json",
+            [csrf.headerName]: csrf.token,
+          },
           body: body ? JSON.stringify(body) : undefined,
         });
-        return { status: r.status, body: r.status === 204 ? null : await r.json() };
+        return {
+          status: r.status,
+          body: r.status === 204 ? null : await r.json(),
+        };
       },
       { path, method, body },
     );
@@ -86,7 +99,8 @@ async function ready(url) {
     return (await api("/api/cases/" + id)).body.record;
   }
   await signIn("employee");
-  const description = "Taxi fare for a client meeting approved by my manager with receipt attached";
+  const description =
+    "Taxi fare for a client meeting approved by my manager with receipt attached";
   const low = await submit("Client meeting transport", description, 80);
   assert.equal(low.status, "APPROVED");
   assert.ok(low.modelVersion.startsWith("tfidf-lr-v2"));
@@ -103,7 +117,11 @@ async function ready(url) {
   assert.match(unsafe.escalationReason, /text-guard-v1/);
   evidence.push("High-score negated approval escalated by text guard: passed");
   await page.getByRole("link", { name: "Overview", exact: true }).click();
-  const uncertain = await submit("Business travel expense", "Taxi fare for a client meeting", 20);
+  const uncertain = await submit(
+    "Business travel expense",
+    "Taxi fare for a client meeting",
+    20,
+  );
   assert.equal(uncertain.status, "PENDING_REVIEW");
   assert.ok(uncertain.confidence < 0.8);
   evidence.push("Short low-score request escalated: passed");
@@ -112,7 +130,10 @@ async function ready(url) {
   assert.equal(high.status, "PENDING_REVIEW");
   assert.equal(high.recommendation, "APPROVE");
   evidence.push("Amount escalation despite model APPROVE: passed");
-  await page.screenshot({ path: path.join(qa, "case-employee.png"), fullPage: true });
+  await page.screenshot({
+    path: path.join(qa, "case-employee.png"),
+    fullPage: true,
+  });
   await page.getByRole("link", { name: "Overview", exact: true }).click();
   const privateCase = await submit(
     "Personal expense",
@@ -140,15 +161,22 @@ async function ready(url) {
   await signOut();
   await signIn("reviewer");
   await page.getByRole("link", { name: "Review queue", exact: true }).click();
-  await page.getByRole("link", { name: "Conference travel", exact: true }).click();
+  await page
+    .getByRole("link", { name: "Conference travel", exact: true })
+    .click();
   await page.getByRole("heading", { name: "Your decision" }).waitFor();
-  await page.screenshot({ path: path.join(qa, "reviewer.png"), fullPage: true });
+  await page.screenshot({
+    path: path.join(qa, "reviewer.png"),
+    fullPage: true,
+  });
   await page.getByRole("button", { name: "Reject", exact: true }).click();
   await page
     .getByLabel("Decision reason")
     .fill("Conference expense exceeds the available department budget.");
   await page.getByRole("button", { name: "Record rejection" }).click();
-  await page.getByRole("heading", { name: "Human decision: Rejected" }).waitFor();
+  await page
+    .getByRole("heading", { name: "Human decision: Rejected" })
+    .waitFor();
   const detail = (await api("/api/cases/" + high.id)).body;
   assert.equal(detail.review.overridden, true);
   assert.equal(detail.audit.at(-1).action, "OVERRIDDEN");
@@ -159,7 +187,9 @@ async function ready(url) {
     .getByRole("link", { name: /Notifications/ })
     .first()
     .click();
-  await page.getByRole("link", { name: `Case #${high.id} was rejected`, exact: true }).waitFor();
+  await page
+    .getByRole("link", { name: `Case #${high.id} was rejected`, exact: true })
+    .waitFor();
   await page.getByRole("button", { name: "Mark as read" }).first().click();
   evidence.push("Employee notification and mark-as-read: passed");
   await signOut();
@@ -168,17 +198,34 @@ async function ready(url) {
   evidence.push("Cross-employee ownership isolation: passed");
   await signOut();
   await signIn("admin");
-  await page.screenshot({ path: path.join(qa, "admin-dashboard.png"), fullPage: true });
-  await page.getByRole("link", { name: "Review policies", exact: true }).click();
+  await page.screenshot({
+    path: path.join(qa, "admin-dashboard.png"),
+    fullPage: true,
+  });
+  await page
+    .getByRole("link", { name: "Review policies", exact: true })
+    .click();
   await page.getByLabel("Amount threshold (SGD)").fill("50");
   await page.getByRole("button", { name: "Save policy" }).first().click();
   await page.getByRole("status").waitFor();
-  await page.screenshot({ path: path.join(qa, "policies.png"), fullPage: true });
+  await page
+    .getByText("Policy change history", { exact: true })
+    .first()
+    .click();
+  await page.getByText(/amountThreshold=50;/).waitFor();
+  evidence.push("Policy change history visible in React: passed");
+  await page.screenshot({
+    path: path.join(qa, "policies.png"),
+    fullPage: true,
+  });
   await signOut();
   await signIn("employee");
   const changed = await submit("Policy threshold example", description, 80);
   assert.equal(changed.status, "PENDING_REVIEW");
-  assert.equal((await api("/api/cases/" + low.id)).body.record.status, "APPROVED");
+  assert.equal(
+    (await api("/api/cases/" + low.id)).body.record.status,
+    "APPROVED",
+  );
   evidence.push("Admin policy change affects only new submissions: passed");
   await page.getByRole("link", { name: "Overview", exact: true }).click();
   await page.getByRole("link", { name: "New request", exact: true }).click();
@@ -187,13 +234,20 @@ async function ready(url) {
   await page.getByLabel("Request title").fill("Production investigation");
   await page
     .getByLabel("Business justification")
-    .fill("Temporary administrator privileges for urgent incident investigation");
+    .fill(
+      "Temporary administrator privileges for urgent incident investigation",
+    );
   await page.getByLabel("Access level").selectOption("ADMIN");
   await page.getByRole("button", { name: "Submit for evaluation" }).click();
-  await page.getByRole("heading", { name: "Production investigation", exact: true }).waitFor();
+  await page
+    .getByRole("heading", { name: "Production investigation", exact: true })
+    .waitFor();
   evidence.push("Conditional IT-access form and submission: passed");
   await page.getByRole("link", { name: "Overview", exact: true }).click();
-  await page.screenshot({ path: path.join(qa, "dashboard.png"), fullPage: true });
+  await page.screenshot({
+    path: path.join(qa, "dashboard.png"),
+    fullPage: true,
+  });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({ path: path.join(qa, "mobile.png"), fullPage: true });
   console.log(
@@ -203,9 +257,42 @@ async function ready(url) {
       viewport: innerWidth,
     })),
   );
-  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  assert.ok(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  );
   evidence.push("Mobile layout without page overflow: passed");
   await page.setViewportSize({ width: 1440, height: 1000 });
+  for (let i = 0; i < 9; i++) {
+    assert.equal(
+      (
+        await api("/api/cases", "POST", {
+          type: "EXPENSE",
+          title: "Paging example " + i,
+          description,
+          amount: 20,
+        })
+      ).status,
+      201,
+    );
+  }
+  await page.getByRole("link", { name: "Overview", exact: true }).click();
+  await page.getByLabel("Search cases").fill("Paging example");
+  await page.getByText("9 cases in this view", { exact: true }).waitFor();
+  assert.equal(await page.locator("tbody tr").count(), 8);
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await page.getByText("Page 2 of 2", { exact: true }).waitFor();
+  await page
+    .getByRole("link", { name: "Paging example 0", exact: true })
+    .waitFor();
+  await page.waitForFunction(
+    () => document.querySelectorAll("tbody tr").length === 1,
+  );
+  await page.getByLabel("Search cases").fill("Paging example 5");
+  await page.getByText("1 case in this view", { exact: true }).waitFor();
+  await page.getByText("Page 1 of 1", { exact: true }).waitFor();
+  evidence.push("Server pagination and search reset via React: passed");
   ai.kill("SIGTERM");
   await new Promise((r) => ai.once("exit", r));
   const fallback = await api("/api/cases", "POST", {
