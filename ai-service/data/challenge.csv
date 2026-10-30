@@ -1,0 +1,19 @@
+text,label
+"Taxi to a customer site; supervisor approved and invoice provided",APPROVE
+"Approved replacement keyboard needed for daily office work",APPROVE
+"Manager authorised rail travel to the customer workshop",APPROVE
+"Standard read only reporting access approved by the system owner",APPROVE
+"Taxi fare for a client meeting not approved by my manager with no receipt attached",REVIEW
+"Manager approval has yet to arrive for travel to a customer",REVIEW
+"Approval withdrawn after the original request was accepted",REVIEW
+"The receipt was lost but the client meeting did happen",REVIEW
+"Authorisation is still being discussed with the system owner",REVIEW
+"Emergency unrestricted production access for troubleshooting",REVIEW
+"Approved amount differs from the invoice total",REVIEW
+"Claim includes both a client visit and a family trip",REVIEW
+"Expense submitted twice for the same taxi receipt",REJECT
+"Personal video game purchase unrelated to company work",REJECT
+"Please disable logging so nobody can see my database access",REJECT
+"Reimbursement for a fabricated trip that never happened",REJECT
+"Subscription for private entertainment at home",REJECT
+"Family holiday travel claimed as a business expense",REJECT

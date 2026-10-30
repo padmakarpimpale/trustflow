@@ -221,32 +221,31 @@ class WorkflowTest {
 
     @Test
     void csrfRequiredForChanges() throws Exception {
-        mvc
-            .perform(post("/cases/new").with(user("employee").roles("SUBMITTER")))
-            .andExpect(status().isForbidden());
+        mvc.perform(post("/cases/new").with(user("employee").roles("SUBMITTER"))).andExpect(
+            status().isForbidden()
+        );
     }
 
     @Test
     void adminEndpointRejectsEmployee() throws Exception {
-        mvc
-            .perform(get("/admin/policies").with(user("employee").roles("SUBMITTER")))
-            .andExpect(status().isForbidden());
+        mvc.perform(get("/admin/policies").with(user("employee").roles("SUBMITTER"))).andExpect(
+            status().isForbidden()
+        );
     }
 
     @Test
     void negativeAmountFailsValidation() throws Exception {
-        mvc
-            .perform(
-                post("/cases/new")
-                    .with(user("employee").roles("SUBMITTER"))
-                    .with(csrf())
-                    .param("type", "EXPENSE")
-                    .param("title", "Invalid claim")
-                    .param("description", "Business travel justification")
-                    .param("amount", "-1")
-            )
-            .andExpect(status().isOk())
-            .andExpect(model().attributeHasFieldErrors("caseForm", "amount"));
+        mvc.perform(
+            post("/api/cases")
+                .with(user("employee").roles("SUBMITTER"))
+                .with(csrf())
+                .contentType("application/json")
+                .content(
+                    "{\"type\":\"EXPENSE\",\"title\":\"Invalid claim\",\"description\":\"Business travel justification\",\"amount\":-1}"
+                )
+        )
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.fields.amount").exists());
     }
 
     @Test
@@ -255,30 +254,31 @@ class WorkflowTest {
             expense("1200", "Business travel for client meeting"),
             "employee"
         );
-        mvc
-            .perform(get("/legacy").with(user("employee").roles("SUBMITTER")))
-            .andExpect(status().isOk());
-        mvc
-            .perform(get("/cases/new").with(user("employee").roles("SUBMITTER")))
-            .andExpect(status().isOk());
-        mvc
-            .perform(get("/cases/" + record.getId()).with(user("reviewer").roles("REVIEWER")))
-            .andExpect(status().isOk());
-        mvc
-            .perform(get("/notifications").with(user("employee").roles("SUBMITTER")))
-            .andExpect(status().isOk());
-        mvc
-            .perform(get("/admin/policies").with(user("admin").roles("ADMIN")))
-            .andExpect(status().isOk());
-        mvc.perform(get("/legacy").with(user("admin").roles("ADMIN"))).andExpect(status().isOk());
+        mvc.perform(get("/legacy").with(user("employee").roles("SUBMITTER"))).andExpect(
+            status().is3xxRedirection()
+        );
+        mvc.perform(get("/cases/new").with(user("employee").roles("SUBMITTER"))).andExpect(
+            status().is3xxRedirection()
+        );
+        mvc.perform(
+            get("/cases/" + record.getId()).with(user("reviewer").roles("REVIEWER"))
+        ).andExpect(status().is3xxRedirection());
+        mvc.perform(get("/notifications").with(user("employee").roles("SUBMITTER"))).andExpect(
+            status().is3xxRedirection()
+        );
+        mvc.perform(get("/admin/policies").with(user("admin").roles("ADMIN"))).andExpect(
+            status().is3xxRedirection()
+        );
+        mvc.perform(get("/legacy").with(user("admin").roles("ADMIN"))).andExpect(
+            status().is3xxRedirection()
+        );
     }
 
     @Test
     void apiReturnsOnlyOwnCases() throws Exception {
         service.submit(expense("1200", "Business travel for client meeting"), "employee");
-        mvc
-            .perform(get("/api/cases").with(user("employee2").roles("SUBMITTER")))
+        mvc.perform(get("/api/cases").with(user("employee2").roles("SUBMITTER")))
             .andExpect(status().isOk())
-            .andExpect(content().json("[]"));
+            .andExpect(jsonPath("$.totalElements").value(0));
     }
 }

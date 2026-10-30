@@ -9,7 +9,11 @@ services:
     ports: ["127.0.0.1:3307:3306"]
     volumes: ["mysql-data:/var/lib/mysql"]
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD"]
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD",
+        ]
       interval: 10s
       timeout: 5s
       retries: 20
@@ -19,16 +23,27 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: mysql
       DB_URL: jdbc:mysql://mysql:3306/trustflow
-      TRUSTFLOW_AI_URL: http://ai:8000/predict
+      AI_URL: http://ai:8000/predict
       DB_USER: trustflow
       DB_PASSWORD: ${DB_PASSWORD:-coursework-demo-only}
     depends_on:
       ai:
-        condition: service_started
+        condition: service_healthy
       mysql:
         condition: service_healthy
   ai:
     build: ./ai-service
     ports: ["127.0.0.1:8000:8000"]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 volumes:
   mysql-data:

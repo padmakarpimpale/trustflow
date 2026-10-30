@@ -13,7 +13,22 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class NotificationService {
 
-    public record Notice(String eventId, Long recipientId, Long caseId, String message) {}
+    public record Notice(
+        String eventId,
+        Long recipientId,
+        Long caseId,
+        String message,
+        String eventType,
+        String title,
+        String recommendation,
+        Double confidence,
+        String decisionReason
+    ) {
+        // Older events still create in-app notifications, but do not trigger email.
+        public Notice(String eventId, Long recipientId, Long caseId, String message) {
+            this(eventId, recipientId, caseId, message, null, null, null, null, null);
+        }
+    }
 
     private final NotificationRepository notifications;
     private final OutboxEventRepository outbox;
@@ -38,6 +53,32 @@ public class NotificationService {
     @Transactional
     public void send(UserAccount user, Long caseId, String message) {
         Notice notice = new Notice(UUID.randomUUID().toString(), user.getId(), caseId, message);
+        dispatch(user, notice);
+    }
+
+    @Transactional
+    public void send(
+        UserAccount user,
+        CaseRecord record,
+        String eventType,
+        String message,
+        String reason
+    ) {
+        var notice = new Notice(
+            UUID.randomUUID().toString(),
+            user.getId(),
+            record.getId(),
+            message,
+            eventType,
+            record.getTitle(),
+            record.getRecommendation().name(),
+            record.getConfidence(),
+            reason
+        );
+        dispatch(user, notice);
+    }
+
+    private void dispatch(UserAccount user, Notice notice) {
         if ("kafka".equals(mode)) {
             try {
                 OutboxEvent event = new OutboxEvent();
@@ -55,10 +96,24 @@ public class NotificationService {
 
     @Transactional
     public void accept(Notice notice) {
+        if (
+            notice == null ||
+            notice.eventId() == null ||
+            notice.eventId().length() > 36 ||
+            notice.eventId().isBlank() ||
+            notice.recipientId() == null ||
+            notice.caseId() == null ||
+            notice.message() == null ||
+            notice.message().isBlank() ||
+            notice.message().length() > 500
+        ) {
+            throw new IllegalArgumentException("Invalid notification payload");
+        }
+        UserAccount recipient = users.lockById(notice.recipientId()).orElseThrow();
         if (notifications.existsByEventId(notice.eventId())) return;
         Notification notification = new Notification();
         notification.setEventId(notice.eventId());
-        notification.setRecipient(users.findById(notice.recipientId()).orElseThrow());
+        notification.setRecipient(recipient);
         notification.setCaseId(notice.caseId());
         notification.setMessage(notice.message());
         notification.setCreatedAt(Instant.now());

@@ -1,5 +1,5 @@
 target/
-data/
+/data/
 .idea/
 *.iml
 .env
@@ -9,3 +9,9 @@ __pycache__/
 /frontend/node_modules/
 /ai-service/.venv/
 /ai-service/__pycache__/
+
+/test-results/
+/database/trustflow-mysql-dump.sql
+
+.env.*
+!.env.email.example

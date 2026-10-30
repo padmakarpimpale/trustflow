@@ -6,7 +6,11 @@ import joblib
 import numpy as np
 import warnings
 from sklearn.exceptions import InconsistentVersionWarning
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+import logging
+import re
+import time
+import uuid
 from pydantic import BaseModel, Field
 
 ROOT = Path(__file__).resolve().parent
@@ -26,6 +30,20 @@ model, VERSION = bundle["pipeline"], bundle["version"]
 vectorizer = model.named_steps["vectorizer"]
 classifier = model.named_steps["classifier"]
 app = FastAPI(title="TrustFlow ML recommendation service", version="2.0.0")
+
+
+@app.middleware("http")
+async def request_id(request: Request, call_next):
+    identifier = request.headers.get("X-Request-ID", "")
+    if not re.fullmatch(r"[A-Za-z0-9-]{1,64}", identifier):
+        identifier = str(uuid.uuid4())
+    start = time.monotonic()
+    response = await call_next(request)
+    response.headers["X-Request-ID"] = identifier
+    logging.getLogger("uvicorn.error").info(
+        "requestId=%s status=%s durationMs=%.1f", identifier,
+        response.status_code, (time.monotonic() - start) * 1000)
+    return response
 
 
 class CaseInput(BaseModel):

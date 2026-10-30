@@ -1,0 +1,11 @@
+# Add after compose.yaml and compose.integrated.yaml. Credentials come from local .env.
+services:
+  app:
+    environment:
+      EMAIL_ENABLED: "true"
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:?Set SMTP_USERNAME in .env}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:?Set SMTP_PASSWORD in .env}
+      EMAIL_DEMO_TO: ${EMAIL_DEMO_TO:?Set EMAIL_DEMO_TO in .env}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:8080}

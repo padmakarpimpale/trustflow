@@ -12824,7 +12824,9 @@ const label = (value) => ({
   REJECT: "Reject",
   REVIEW: "Review"
 })[value] || value;
-const money = (value) => new Intl.NumberFormat("en-SG", { style: "currency", currency: "SGD" }).format(value);
+const money = (value) => new Intl.NumberFormat("en-SG", { style: "currency", currency: "SGD" }).format(
+  value
+);
 const date = (value) => value ? new Date(value).toLocaleString("en-SG", {
   dateStyle: "medium",
   timeStyle: "short"
@@ -12844,7 +12846,7 @@ function Empty({ title, detail }) {
 function App() {
   const [session, setSession] = reactExports.useState(null), [booting, setBooting] = reactExports.useState(true), [bootError, setBootError] = reactExports.useState(null);
   const [route, setRoute] = reactExports.useState(location.hash.slice(1) || "dashboard");
-  const [records, setRecords] = reactExports.useState([]), [notices, setNotices] = reactExports.useState([]), [error, setError] = reactExports.useState(null), [loading, setLoading] = reactExports.useState(false), [menu, setMenu] = reactExports.useState(false);
+  const [records, setRecords] = reactExports.useState({ total: 0 }), [notices, setNotices] = reactExports.useState([]), [error, setError] = reactExports.useState(null), [loading, setLoading] = reactExports.useState(false), [menu, setMenu] = reactExports.useState(false);
   reactExports.useEffect(() => {
     const change = () => {
       setRoute(location.hash.slice(1) || "dashboard");
@@ -12864,7 +12866,7 @@ function App() {
     setError(null);
     try {
       const [cases, alerts] = await Promise.all([
-        request("/api/cases"),
+        request("/api/cases/summary"),
         request("/api/notifications")
       ]);
       setRecords(cases);
@@ -12879,7 +12881,8 @@ function App() {
   reactExports.useEffect(() => {
     if (session) reload();
   }, [session]);
-  if (booting) return /* @__PURE__ */ React.createElement("div", { className: "loading-page" }, "Opening your workspace…");
+  if (booting)
+    return /* @__PURE__ */ React.createElement("div", { className: "loading-page" }, "Opening your workspace…");
   if (!session)
     return /* @__PURE__ */ React.createElement(
       Login,
@@ -12902,12 +12905,26 @@ function App() {
   };
   const nav = [
     ["dashboard", LayoutDashboard, "Overview"],
-    ["cases", FileText, session.role === "SUBMITTER" ? "My cases" : "All cases"],
+    [
+      "cases",
+      FileText,
+      session.role === "SUBMITTER" ? "My cases" : "All cases"
+    ],
     ...session.role === "REVIEWER" ? [["pending", Clock3, "Review queue"]] : [],
     ["notifications", Bell, "Notifications"],
     ...session.role === "ADMIN" ? [["policies", SlidersHorizontal, "Review policies"]] : []
   ];
-  return /* @__PURE__ */ React.createElement("div", { className: "app-shell" }, /* @__PURE__ */ React.createElement("aside", { className: "sidebar " + (menu ? "open" : "") }, /* @__PURE__ */ React.createElement("a", { className: "brand", href: "#dashboard" }, /* @__PURE__ */ React.createElement("span", { className: "brand-icon" }, /* @__PURE__ */ React.createElement(ShieldCheck, { size: 23 })), "TrustFlow", /* @__PURE__ */ React.createElement("span", { className: "brand-dot" }, ".")), /* @__PURE__ */ React.createElement("div", { className: "workspace-label" }, "DECISION WORKSPACE"), /* @__PURE__ */ React.createElement("nav", null, nav.map(([key, Icon2, title]) => /* @__PURE__ */ React.createElement("a", { key, href: "#" + key, className: route === key ? "active" : "" }, /* @__PURE__ */ React.createElement(Icon2, { size: 18 }), title, key === "notifications" && unread > 0 && /* @__PURE__ */ React.createElement("small", null, unread)))), /* @__PURE__ */ React.createElement("div", { className: "sidebar-bottom" }, /* @__PURE__ */ React.createElement("div", { className: "account" }, /* @__PURE__ */ React.createElement("span", { className: "avatar" }, session.username[0].toUpperCase()), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("strong", null, session.username), /* @__PURE__ */ React.createElement("small", null, label(session.role))), /* @__PURE__ */ React.createElement(
+  return /* @__PURE__ */ React.createElement("div", { className: "app-shell" }, /* @__PURE__ */ React.createElement("aside", { className: "sidebar " + (menu ? "open" : "") }, /* @__PURE__ */ React.createElement("a", { className: "brand", href: "#dashboard" }, /* @__PURE__ */ React.createElement("span", { className: "brand-icon" }, /* @__PURE__ */ React.createElement(ShieldCheck, { size: 23 })), "TrustFlow", /* @__PURE__ */ React.createElement("span", { className: "brand-dot" }, ".")), /* @__PURE__ */ React.createElement("div", { className: "workspace-label" }, "DECISION WORKSPACE"), /* @__PURE__ */ React.createElement("nav", null, nav.map(([key, Icon2, title]) => /* @__PURE__ */ React.createElement(
+    "a",
+    {
+      key,
+      href: "#" + key,
+      className: route === key ? "active" : ""
+    },
+    /* @__PURE__ */ React.createElement(Icon2, { size: 18 }),
+    title,
+    key === "notifications" && unread > 0 && /* @__PURE__ */ React.createElement("small", null, unread)
+  ))), /* @__PURE__ */ React.createElement("div", { className: "sidebar-bottom" }, /* @__PURE__ */ React.createElement("div", { className: "account" }, /* @__PURE__ */ React.createElement("span", { className: "avatar" }, session.username[0].toUpperCase()), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("strong", null, session.username), /* @__PURE__ */ React.createElement("small", null, label(session.role))), /* @__PURE__ */ React.createElement(
     "button",
     {
       className: "icon-button",
@@ -12931,7 +12948,22 @@ function App() {
       onClick: () => setMenu(!menu)
     },
     /* @__PURE__ */ React.createElement(Menu, null)
-  ), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "breadcrumb" }, "Workspace"), /* @__PURE__ */ React.createElement(ChevronRight, { size: 13 }), /* @__PURE__ */ React.createElement("strong", null, titles[route] || "Case details")), /* @__PURE__ */ React.createElement("div", null, session.aiMode !== "http" && /* @__PURE__ */ React.createElement("span", { className: "mode" }, "Simulation mode"), /* @__PURE__ */ React.createElement("button", { className: "icon-button", "aria-label": "Refresh workspace", onClick: reload }, /* @__PURE__ */ React.createElement(RefreshCw, { size: 17, className: loading ? "spin" : "" })))), /* @__PURE__ */ React.createElement("main", null, /* @__PURE__ */ React.createElement(ErrorBox, { error }), route.startsWith("case/") ? /* @__PURE__ */ React.createElement(Detail, { id: route.split("/")[1], session, onChange: reload }) : route === "new" ? session.role === "SUBMITTER" ? /* @__PURE__ */ React.createElement(
+  ), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "breadcrumb" }, "Workspace"), /* @__PURE__ */ React.createElement(ChevronRight, { size: 13 }), /* @__PURE__ */ React.createElement("strong", null, titles[route] || "Case details")), /* @__PURE__ */ React.createElement("div", null, session.aiMode !== "http" && /* @__PURE__ */ React.createElement("span", { className: "mode" }, "Simulation mode"), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      className: "icon-button",
+      "aria-label": "Refresh workspace",
+      onClick: reload
+    },
+    /* @__PURE__ */ React.createElement(RefreshCw, { size: 17, className: loading ? "spin" : "" })
+  ))), /* @__PURE__ */ React.createElement("main", null, /* @__PURE__ */ React.createElement(ErrorBox, { error }), route.startsWith("case/") ? /* @__PURE__ */ React.createElement(
+    Detail,
+    {
+      id: route.split("/")[1],
+      session,
+      onChange: reload
+    }
+  ) : route === "new" ? session.role === "SUBMITTER" ? /* @__PURE__ */ React.createElement(
     NewCase,
     {
       onCreated: async (c) => {
@@ -12945,7 +12977,15 @@ function App() {
       title: "Employee access required",
       detail: "Only employees can submit a request."
     }
-  ) : route === "notifications" ? /* @__PURE__ */ React.createElement(Notifications, { notices, refresh: reload }) : route === "policies" ? session.role === "ADMIN" ? /* @__PURE__ */ React.createElement(Policies, null) : /* @__PURE__ */ React.createElement(Empty, { title: "Administrator access required" }) : /* @__PURE__ */ React.createElement(Dashboard, { records, session, route, loading })), /* @__PURE__ */ React.createElement("footer", null, "TrustFlow ", /* @__PURE__ */ React.createElement("span", null, "Human-in-the-loop decision review"))));
+  ) : route === "notifications" ? /* @__PURE__ */ React.createElement(Notifications, { notices, refresh: reload }) : route === "policies" ? session.role === "ADMIN" ? /* @__PURE__ */ React.createElement(Policies, null) : /* @__PURE__ */ React.createElement(Empty, { title: "Administrator access required" }) : /* @__PURE__ */ React.createElement(
+    Dashboard,
+    {
+      records,
+      session,
+      route,
+      loading
+    }
+  )), /* @__PURE__ */ React.createElement("footer", null, "TrustFlow ", /* @__PURE__ */ React.createElement("span", null, "Human-in-the-loop decision review"))));
 }
 function Login({ onLogin, initialError }) {
   const [username, setUsername] = reactExports.useState(""), [password, setPassword] = reactExports.useState(""), [busy, setBusy] = reactExports.useState(false), [error, setError] = reactExports.useState(initialError);
@@ -12992,34 +13032,117 @@ function Dashboard({ records, session, route, loading }) {
     if (session.role === "ADMIN")
       request("/api/admin/analytics").then(setAnalytics).catch(() => setAnalytics(null));
   }, [session, records]);
-  const count = (status) => records.filter((c) => c.status === status).length;
-  const filtered = records.filter(
-    (c) => (filter === "ALL" || c.status === filter) && `${c.id} ${c.title} ${c.owner}`.toLowerCase().includes(search.toLowerCase())
-  );
-  const pages = Math.max(1, Math.ceil(filtered.length / 8));
-  reactExports.useEffect(() => setPage(1), [search, filter]);
-  reactExports.useEffect(() => setPage((p) => Math.min(p, pages)), [pages]);
+  const [result, setResult] = reactExports.useState({
+    content: [],
+    totalElements: 0,
+    totalPages: 0
+  });
+  const [queryError, setQueryError] = reactExports.useState(null);
+  const [queryLoading, setQueryLoading] = reactExports.useState(false);
+  const [type, setType] = reactExports.useState("ALL"), [sort, setSort] = reactExports.useState("newest");
+  const count = (status) => records[status] || 0;
+  const filtered = result.content;
+  const pages = Math.max(1, result.totalPages);
+  reactExports.useEffect(() => setPage(1), [search, filter, type, sort]);
+  reactExports.useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setQueryLoading(true);
+      setQueryError(null);
+      const params = new URLSearchParams({
+        page: String(page - 1),
+        size: "8",
+        q: search,
+        sort
+      });
+      if (filter !== "ALL") params.set("status", filter);
+      if (type !== "ALL") params.set("type", type);
+      try {
+        const data = await request("/api/cases/page?" + params, {
+          signal: controller.signal
+        });
+        if (active) {
+          setResult(data);
+          if (data.totalPages > 0 && page > data.totalPages)
+            setPage(data.totalPages);
+        }
+      } catch (e) {
+        if (active && e.name !== "AbortError") setQueryError(e);
+      } finally {
+        if (active) setQueryLoading(false);
+      }
+    }, 200);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [page, search, filter, type, sort, records]);
   const overview = route === "dashboard";
   return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "page-heading" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h1", null, overview ? "Decision overview" : route === "pending" ? "Ready for your review" : session.role === "SUBMITTER" ? "Your requests" : "All cases")), session.role === "SUBMITTER" && /* @__PURE__ */ React.createElement("a", { className: "primary", href: "#new" }, /* @__PURE__ */ React.createElement(Plus, { size: 18 }), "New request")), overview && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "stats" }, [
-    ["Total cases", records.length, FileText, "total"],
+    ["Total cases", records.total, FileText, "total"],
     ["Needs review", count("PENDING_REVIEW"), Clock3, "pending"],
     ["Approved", count("APPROVED"), Check, "approved"],
     ["Rejected", count("REJECTED"), X, "rejected"]
-  ].map(([name, value, Icon2, color]) => /* @__PURE__ */ React.createElement("div", { className: "stat", key: name }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", null, name), /* @__PURE__ */ React.createElement(Icon2, { size: 19 })), /* @__PURE__ */ React.createElement("strong", null, value), /* @__PURE__ */ React.createElement("span", { className: "stat-line " + color })))), analytics && /* @__PURE__ */ React.createElement("div", { className: "analytics" }, /* @__PURE__ */ React.createElement("span", null, /* @__PURE__ */ React.createElement("b", null, analytics.reviewCount), " Human decisions"), /* @__PURE__ */ React.createElement("span", null, /* @__PURE__ */ React.createElement("b", null, analytics.overrides), " Recommendation overrides"), /* @__PURE__ */ React.createElement("span", null, /* @__PURE__ */ React.createElement("b", null, analytics.reviewMinutes, " min"), " Average time to decision"))), /* @__PURE__ */ React.createElement("section", { className: "card case-list" }, /* @__PURE__ */ React.createElement("div", { className: "section-heading" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h2", null, overview ? "Case activity" : "Requests"), /* @__PURE__ */ React.createElement("p", null, filtered.length, " ", filtered.length === 1 ? "case" : "cases", " in this view")), /* @__PURE__ */ React.createElement("div", { className: "search" }, /* @__PURE__ */ React.createElement(Search, { size: 17 }), /* @__PURE__ */ React.createElement(
+  ].map(([name, value, Icon2, color]) => /* @__PURE__ */ React.createElement("div", { className: "stat", key: name }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", null, name), /* @__PURE__ */ React.createElement(Icon2, { size: 19 })), /* @__PURE__ */ React.createElement("strong", null, value), /* @__PURE__ */ React.createElement("span", { className: "stat-line " + color })))), analytics && /* @__PURE__ */ React.createElement("div", { className: "analytics" }, /* @__PURE__ */ React.createElement("span", null, /* @__PURE__ */ React.createElement("b", null, analytics.reviewCount), " Human decisions"), /* @__PURE__ */ React.createElement("span", null, /* @__PURE__ */ React.createElement("b", null, analytics.overrides), " Recommendation overrides"), /* @__PURE__ */ React.createElement("span", null, /* @__PURE__ */ React.createElement("b", null, analytics.reviewMinutes, " min"), " Average time to decision"))), /* @__PURE__ */ React.createElement("section", { className: "card case-list" }, /* @__PURE__ */ React.createElement("div", { className: "section-heading" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h2", null, overview ? "Case activity" : "Requests"), /* @__PURE__ */ React.createElement("p", null, result.totalElements, " ", result.totalElements === 1 ? "case" : "cases", " in this view")), /* @__PURE__ */ React.createElement("div", { className: "search" }, /* @__PURE__ */ React.createElement(Search, { size: 17 }), /* @__PURE__ */ React.createElement(
     "input",
     {
       "aria-label": "Search cases",
       placeholder: "Search title, ID or employee",
+      maxLength: 120,
       value: search,
       onChange: (e) => setSearch(e.target.value)
     }
-  ))), /* @__PURE__ */ React.createElement("div", { className: "filters" }, ["ALL", "PENDING_REVIEW", "APPROVED", "REJECTED"].map((f) => /* @__PURE__ */ React.createElement("button", { key: f, onClick: () => setFilter(f), className: filter === f ? "selected" : "" }, f === "ALL" ? "All cases" : label(f)))), loading && !records.length ? /* @__PURE__ */ React.createElement("p", { className: "empty" }, "Loading cases…") : !filtered.length ? /* @__PURE__ */ React.createElement(
+  ))), /* @__PURE__ */ React.createElement("div", { className: "filters" }, ["ALL", "PENDING_REVIEW", "APPROVED", "REJECTED"].map((f) => /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      key: f,
+      onClick: () => setFilter(f),
+      className: filter === f ? "selected" : ""
+    },
+    f === "ALL" ? "All cases" : label(f)
+  ))), /* @__PURE__ */ React.createElement("div", { className: "filters" }, /* @__PURE__ */ React.createElement(
+    "select",
+    {
+      "aria-label": "Case type",
+      value: type,
+      onChange: (e) => setType(e.target.value)
+    },
+    /* @__PURE__ */ React.createElement("option", { value: "ALL" }, "All types"),
+    /* @__PURE__ */ React.createElement("option", { value: "EXPENSE" }, "Expense claims"),
+    /* @__PURE__ */ React.createElement("option", { value: "ACCESS" }, "Access requests")
+  ), /* @__PURE__ */ React.createElement(
+    "select",
+    {
+      "aria-label": "Sort cases",
+      value: sort,
+      onChange: (e) => setSort(e.target.value)
+    },
+    /* @__PURE__ */ React.createElement("option", { value: "newest" }, "Newest first"),
+    /* @__PURE__ */ React.createElement("option", { value: "oldest" }, "Oldest first"),
+    /* @__PURE__ */ React.createElement("option", { value: "amount" }, "Highest amount")
+  )), /* @__PURE__ */ React.createElement(ErrorBox, { error: queryError }), queryLoading ? /* @__PURE__ */ React.createElement("p", { className: "empty" }, "Loading cases…") : !filtered.length ? /* @__PURE__ */ React.createElement(
     Empty,
     {
-      title: records.length ? "No matching cases" : "No requests yet",
-      detail: records.length ? "Try another search or status filter." : "New requests will appear here with their status and recommendation."
+      title: records.total ? "No matching cases" : "No requests yet",
+      detail: records.total ? "Try another search or status filter." : "New requests will appear here with their status and recommendation."
     }
-  ) : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "table-scroll" }, /* @__PURE__ */ React.createElement("table", null, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", null, "Case"), /* @__PURE__ */ React.createElement("th", null, "Type / amount"), /* @__PURE__ */ React.createElement("th", null, "Status"), /* @__PURE__ */ React.createElement("th", null, "Recommendation"), /* @__PURE__ */ React.createElement("th", null, "Submitted"), /* @__PURE__ */ React.createElement("th", null, /* @__PURE__ */ React.createElement("span", { className: "sr-only" }, "Open")))), /* @__PURE__ */ React.createElement("tbody", null, filtered.slice((page - 1) * 8, page * 8).map((c) => /* @__PURE__ */ React.createElement("tr", { key: c.id }, /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("a", { className: "case-title", href: "#case/" + c.id }, c.title), /* @__PURE__ */ React.createElement("small", null, "#", String(c.id).padStart(3, "0"), " · ", c.owner)), /* @__PURE__ */ React.createElement("td", null, label(c.type), /* @__PURE__ */ React.createElement("small", null, c.type === "EXPENSE" ? money(c.amount) : c.accessLevel === "ADMIN" ? "Administrator access" : "Standard access")), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(Badge, { value: c.status })), /* @__PURE__ */ React.createElement("td", null, label(c.recommendation), /* @__PURE__ */ React.createElement("small", null, c.modelVersion === "unavailable" ? "Model unavailable" : `${Math.round(c.confidence * 100)}% model score`)), /* @__PURE__ */ React.createElement("td", { className: "date" }, date(c.createdAt)), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("a", { "aria-label": "Open case " + c.id, href: "#case/" + c.id }, /* @__PURE__ */ React.createElement(ArrowUpRight, { size: 18 })))))))), /* @__PURE__ */ React.createElement("div", { className: "pagination" }, /* @__PURE__ */ React.createElement("span", null, "Page ", page, " of ", pages), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("button", { disabled: page === 1, onClick: () => setPage(page - 1) }, "Previous"), /* @__PURE__ */ React.createElement("button", { disabled: page === pages, onClick: () => setPage(page + 1) }, "Next"))))));
+  ) : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "table-scroll" }, /* @__PURE__ */ React.createElement("table", null, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", null, "Case"), /* @__PURE__ */ React.createElement("th", null, "Type / amount"), /* @__PURE__ */ React.createElement("th", null, "Status"), /* @__PURE__ */ React.createElement("th", null, "Recommendation"), /* @__PURE__ */ React.createElement("th", null, "Submitted"), /* @__PURE__ */ React.createElement("th", null, /* @__PURE__ */ React.createElement("span", { className: "sr-only" }, "Open")))), /* @__PURE__ */ React.createElement("tbody", null, filtered.map((c) => /* @__PURE__ */ React.createElement("tr", { key: c.id }, /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("a", { className: "case-title", href: "#case/" + c.id }, c.title), /* @__PURE__ */ React.createElement("small", null, "#", String(c.id).padStart(3, "0"), " · ", c.owner)), /* @__PURE__ */ React.createElement("td", null, label(c.type), /* @__PURE__ */ React.createElement("small", null, c.type === "EXPENSE" ? money(c.amount) : c.accessLevel === "ADMIN" ? "Administrator access" : "Standard access")), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(Badge, { value: c.status })), /* @__PURE__ */ React.createElement("td", null, label(c.recommendation), /* @__PURE__ */ React.createElement("small", null, c.modelVersion === "unavailable" ? "Model unavailable" : `${Math.round(c.confidence * 100)}% model score`)), /* @__PURE__ */ React.createElement("td", { className: "date" }, date(c.createdAt)), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(
+    "a",
+    {
+      "aria-label": "Open case " + c.id,
+      href: "#case/" + c.id
+    },
+    /* @__PURE__ */ React.createElement(ArrowUpRight, { size: 18 })
+  ))))))), /* @__PURE__ */ React.createElement("div", { className: "pagination" }, /* @__PURE__ */ React.createElement("span", null, "Page ", page, " of ", pages), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("button", { disabled: page === 1, onClick: () => setPage(page - 1) }, "Previous"), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      disabled: page === pages,
+      onClick: () => setPage(page + 1)
+    },
+    "Next"
+  ))))));
 }
 function NewCase({ onCreated }) {
   var _a, _b;
@@ -13129,7 +13252,7 @@ function Detail({ id, session, onChange }) {
   if (!data)
     return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("a", { className: "back", href: "#cases" }, /* @__PURE__ */ React.createElement(ArrowLeft, { size: 16 }), "Back to cases"), /* @__PURE__ */ React.createElement(ErrorBox, { error }), !error && /* @__PURE__ */ React.createElement("p", null, "Loading case…"));
   const c = data.record;
-  return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("a", { className: "back", href: "#cases" }, /* @__PURE__ */ React.createElement(ArrowLeft, { size: 16 }), "Back to cases"), /* @__PURE__ */ React.createElement("div", { className: "page-heading" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "eyebrow" }, "CASE #", String(c.id).padStart(3, "0"), " · ", label(c.type).toUpperCase()), /* @__PURE__ */ React.createElement("h1", null, c.title), /* @__PURE__ */ React.createElement("p", null, "Submitted by ", c.owner, " · ", date(c.createdAt))), /* @__PURE__ */ React.createElement(Badge, { value: c.status })), /* @__PURE__ */ React.createElement(ErrorBox, { error }), /* @__PURE__ */ React.createElement("div", { className: "detail-grid" }, /* @__PURE__ */ React.createElement("section", { className: "card detail-card" }, /* @__PURE__ */ React.createElement("h2", null, "Request details"), /* @__PURE__ */ React.createElement("div", { className: "detail-facts" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", null, "Request type"), /* @__PURE__ */ React.createElement("strong", null, label(c.type))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", null, c.type === "EXPENSE" ? "Amount" : "Access level"), /* @__PURE__ */ React.createElement("strong", null, c.type === "EXPENSE" ? money(c.amount) : c.accessLevel === "ADMIN" ? "Administrator" : "Standard"))), /* @__PURE__ */ React.createElement("h3", null, "Business justification"), /* @__PURE__ */ React.createElement("p", { className: "preserve" }, c.description), /* @__PURE__ */ React.createElement("div", { className: "routing" }, /* @__PURE__ */ React.createElement(Clock3, { size: 19 }), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("strong", null, "Routing decision"), /* @__PURE__ */ React.createElement("p", null, c.escalationReason)))), /* @__PURE__ */ React.createElement("section", { className: "card detail-card recommendation" }, /* @__PURE__ */ React.createElement("div", { className: "section-heading" }, /* @__PURE__ */ React.createElement("h2", null, "Model recommendation"), /* @__PURE__ */ React.createElement(Activity, { size: 21 })), /* @__PURE__ */ React.createElement("strong", { className: "recommendation-label" }, label(c.recommendation)), /* @__PURE__ */ React.createElement("div", { className: "score-label" }, /* @__PURE__ */ React.createElement("span", null, "Model score"), /* @__PURE__ */ React.createElement("strong", null, Math.round(c.confidence * 100), "%")), /* @__PURE__ */ React.createElement("div", { className: "score-track" }, /* @__PURE__ */ React.createElement("span", { style: { width: `${c.confidence * 100}%` } })), /* @__PURE__ */ React.createElement("small", null, "Score indicates model preference, not verified accuracy."), /* @__PURE__ */ React.createElement("details", { className: "model-details" }, /* @__PURE__ */ React.createElement("summary", null, "Model details"), /* @__PURE__ */ React.createElement("p", null, c.explanation), /* @__PURE__ */ React.createElement("small", null, "Model: ", c.modelVersion, /* @__PURE__ */ React.createElement("br", null), "Policy version: ", c.policyVersion), /* @__PURE__ */ React.createElement("small", null, "Trained on synthetic examples. Supporting documents are not verified.")))), data.review && /* @__PURE__ */ React.createElement("section", { className: "card decision-card" }, /* @__PURE__ */ React.createElement(ShieldCheck, null), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h2", null, "Human decision: ", label(data.review.decision)), /* @__PURE__ */ React.createElement("p", { className: "preserve" }, data.review.reason), /* @__PURE__ */ React.createElement("small", null, data.review.reviewer, " · ", date(data.review.createdAt)), data.review.overridden && /* @__PURE__ */ React.createElement("span", { className: "override" }, "Overrides the model recommendation"))), c.status === "PENDING_REVIEW" && session.role === "REVIEWER" && /* @__PURE__ */ React.createElement("form", { className: "card form-card review-form", onSubmit: review }, /* @__PURE__ */ React.createElement("div", { className: "section-heading" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h2", null, "Your decision"), /* @__PURE__ */ React.createElement("p", null, "Review the evidence and record your reasoning. This decision is final.")), /* @__PURE__ */ React.createElement(ShieldCheck, null)), /* @__PURE__ */ React.createElement("div", { className: "decision-options" }, /* @__PURE__ */ React.createElement(
+  return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("a", { className: "back", href: "#cases" }, /* @__PURE__ */ React.createElement(ArrowLeft, { size: 16 }), "Back to cases"), /* @__PURE__ */ React.createElement("div", { className: "page-heading" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "eyebrow" }, "CASE #", String(c.id).padStart(3, "0"), " ·", " ", label(c.type).toUpperCase()), /* @__PURE__ */ React.createElement("h1", null, c.title), /* @__PURE__ */ React.createElement("p", null, "Submitted by ", c.owner, " · ", date(c.createdAt))), /* @__PURE__ */ React.createElement(Badge, { value: c.status })), /* @__PURE__ */ React.createElement(ErrorBox, { error }), /* @__PURE__ */ React.createElement("div", { className: "detail-grid" }, /* @__PURE__ */ React.createElement("section", { className: "card detail-card" }, /* @__PURE__ */ React.createElement("h2", null, "Request details"), /* @__PURE__ */ React.createElement("div", { className: "detail-facts" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", null, "Request type"), /* @__PURE__ */ React.createElement("strong", null, label(c.type))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", null, c.type === "EXPENSE" ? "Amount" : "Access level"), /* @__PURE__ */ React.createElement("strong", null, c.type === "EXPENSE" ? money(c.amount) : c.accessLevel === "ADMIN" ? "Administrator" : "Standard"))), /* @__PURE__ */ React.createElement("h3", null, "Business justification"), /* @__PURE__ */ React.createElement("p", { className: "preserve" }, c.description), /* @__PURE__ */ React.createElement("div", { className: "routing" }, /* @__PURE__ */ React.createElement(Clock3, { size: 19 }), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("strong", null, "Routing decision"), /* @__PURE__ */ React.createElement("p", null, c.escalationReason)))), /* @__PURE__ */ React.createElement("section", { className: "card detail-card recommendation" }, /* @__PURE__ */ React.createElement("div", { className: "section-heading" }, /* @__PURE__ */ React.createElement("h2", null, "Model recommendation"), /* @__PURE__ */ React.createElement(Activity, { size: 21 })), /* @__PURE__ */ React.createElement("strong", { className: "recommendation-label" }, label(c.recommendation)), /* @__PURE__ */ React.createElement("div", { className: "score-label" }, /* @__PURE__ */ React.createElement("span", null, "Model score"), /* @__PURE__ */ React.createElement("strong", null, Math.round(c.confidence * 100), "%")), /* @__PURE__ */ React.createElement("div", { className: "score-track" }, /* @__PURE__ */ React.createElement("span", { style: { width: `${c.confidence * 100}%` } })), /* @__PURE__ */ React.createElement("small", null, "Score indicates model preference, not verified accuracy."), /* @__PURE__ */ React.createElement("details", { className: "model-details" }, /* @__PURE__ */ React.createElement("summary", null, "Model details"), /* @__PURE__ */ React.createElement("p", null, c.explanation), /* @__PURE__ */ React.createElement("small", null, "Model: ", c.modelVersion, /* @__PURE__ */ React.createElement("br", null), "Policy version: ", c.policyVersion, /* @__PURE__ */ React.createElement("br", null), c.policyMinConfidence == null ? "Historical policy snapshot unavailable" : `Saved policy: minimum score ${c.policyMinConfidence}, amount limit ${c.policyAmountThreshold}, mandatory review ${c.policyAlwaysReview ? "yes" : "no"}`, /* @__PURE__ */ React.createElement("br", null), "Routing rules: ", c.routingVersion || "not recorded"), /* @__PURE__ */ React.createElement("small", null, "Trained on synthetic examples. Supporting documents are not verified.")))), data.review && /* @__PURE__ */ React.createElement("section", { className: "card decision-card" }, /* @__PURE__ */ React.createElement(ShieldCheck, null), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h2", null, "Human decision: ", label(data.review.decision)), /* @__PURE__ */ React.createElement("p", { className: "preserve" }, data.review.reason), /* @__PURE__ */ React.createElement("small", null, data.review.reviewer, " · ", date(data.review.createdAt)), data.review.overridden && /* @__PURE__ */ React.createElement("span", { className: "override" }, "Overrides the model recommendation"))), c.status === "PENDING_REVIEW" && session.role === "REVIEWER" && /* @__PURE__ */ React.createElement("form", { className: "card form-card review-form", onSubmit: review }, /* @__PURE__ */ React.createElement("div", { className: "section-heading" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h2", null, "Your decision"), /* @__PURE__ */ React.createElement("p", null, "Review the evidence and record your reasoning. This decision is final.")), /* @__PURE__ */ React.createElement(ShieldCheck, null)), /* @__PURE__ */ React.createElement("div", { className: "decision-options" }, /* @__PURE__ */ React.createElement(
     "button",
     {
       type: "button",
@@ -13172,7 +13295,44 @@ function Notifications({ notices, refresh }) {
       setBusy(null);
     }
   }
-  return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "page-heading" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h1", null, "Notifications"), /* @__PURE__ */ React.createElement("p", null, "Request updates and cases waiting for your attention."))), /* @__PURE__ */ React.createElement(ErrorBox, { error }), /* @__PURE__ */ React.createElement("section", { className: "card" }, !notices.length ? /* @__PURE__ */ React.createElement(Empty, { title: "You're all caught up", detail: "New case updates will appear here." }) : notices.map((n) => /* @__PURE__ */ React.createElement("div", { key: n.id, className: "notice " + (!n.read ? "unread" : "") }, /* @__PURE__ */ React.createElement(Bell, { size: 20 }), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("a", { href: "#case/" + n.caseId }, n.message), /* @__PURE__ */ React.createElement("small", null, date(n.createdAt))), !n.read && /* @__PURE__ */ React.createElement("button", { disabled: busy === n.id, onClick: () => read(n.id) }, "Mark as read")))));
+  return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "page-heading" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h1", null, "Notifications"), /* @__PURE__ */ React.createElement("p", null, "Request updates and cases waiting for your attention."))), /* @__PURE__ */ React.createElement(ErrorBox, { error }), /* @__PURE__ */ React.createElement("section", { className: "card" }, !notices.length ? /* @__PURE__ */ React.createElement(
+    Empty,
+    {
+      title: "You're all caught up",
+      detail: "New case updates will appear here."
+    }
+  ) : notices.map((n) => /* @__PURE__ */ React.createElement("div", { key: n.id, className: "notice " + (!n.read ? "unread" : "") }, /* @__PURE__ */ React.createElement(Bell, { size: 20 }), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("a", { href: "#case/" + n.caseId }, n.message), /* @__PURE__ */ React.createElement("small", null, date(n.createdAt))), !n.read && /* @__PURE__ */ React.createElement("button", { disabled: busy === n.id, onClick: () => read(n.id) }, "Mark as read")))));
+}
+function PolicyHistory({ id }) {
+  const [data, setData] = reactExports.useState(null), [error, setError] = reactExports.useState(null), [page, setPage] = reactExports.useState(0);
+  reactExports.useEffect(() => {
+    let active = true;
+    request(`/api/admin/policies/${id}/history?page=${page}`).then((result) => {
+      if (active) setData(result);
+    }).catch((error2) => {
+      if (active) setError(error2);
+    });
+    return () => {
+      active = false;
+    };
+  }, [id, page]);
+  return /* @__PURE__ */ React.createElement("details", { className: "model-details" }, /* @__PURE__ */ React.createElement("summary", null, "Policy change history"), /* @__PURE__ */ React.createElement(ErrorBox, { error }), data == null ? void 0 : data.content.map((change) => /* @__PURE__ */ React.createElement("div", { key: change.id }, /* @__PURE__ */ React.createElement("strong", null, change.actor, " · ", date(change.createdAt)), /* @__PURE__ */ React.createElement("p", null, "Before: ", change.beforeValues), /* @__PURE__ */ React.createElement("p", null, "After: ", change.afterValues))), data && !data.content.length && /* @__PURE__ */ React.createElement("p", null, "No policy changes recorded."), (data == null ? void 0 : data.totalPages) > 1 && /* @__PURE__ */ React.createElement("div", { className: "pagination" }, /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "button",
+      disabled: page === 0,
+      onClick: () => setPage(page - 1)
+    },
+    "Previous"
+  ), /* @__PURE__ */ React.createElement("span", null, page + 1, " / ", data.totalPages), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "button",
+      disabled: page + 1 >= data.totalPages,
+      onClick: () => setPage(page + 1)
+    },
+    "Next"
+  )));
 }
 function Policies() {
   const [policies, setPolicies] = reactExports.useState([]), [error, setError] = reactExports.useState(null), [message, setMessage] = reactExports.useState(""), [busy, setBusy] = reactExports.useState(null);
@@ -13193,7 +13353,9 @@ function Policies() {
         method: "PUT",
         body: JSON.stringify({
           version: p.version,
-          amountThreshold: Number(f.get("amountThreshold") ?? p.amountThreshold),
+          amountThreshold: Number(
+            f.get("amountThreshold") ?? p.amountThreshold
+          ),
           minConfidence: Number(f.get("minConfidence")),
           alwaysReview: f.has("alwaysReview")
         })
@@ -13239,9 +13401,17 @@ function Policies() {
         required: true
       }
     ), /* @__PURE__ */ React.createElement("small", null, "Scores below this value require review. Enter 0–1.")),
-    /* @__PURE__ */ React.createElement("label", { className: "checkbox" }, /* @__PURE__ */ React.createElement("input", { type: "checkbox", name: "alwaysReview", defaultChecked: p.alwaysReview }), "Always require human review"),
+    /* @__PURE__ */ React.createElement("label", { className: "checkbox" }, /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        type: "checkbox",
+        name: "alwaysReview",
+        defaultChecked: p.alwaysReview
+      }
+    ), "Always require human review"),
     /* @__PURE__ */ React.createElement("p", { className: "model-note" }, p.type === "ACCESS" ? "Administrator access always requires review, regardless of this setting." : "REJECT and REVIEW recommendations always go to a human."),
-    /* @__PURE__ */ React.createElement("button", { className: "primary", disabled: busy === p.id }, busy === p.id ? "Saving…" : "Save policy")
+    /* @__PURE__ */ React.createElement("button", { className: "primary", disabled: busy === p.id }, busy === p.id ? "Saving…" : "Save policy"),
+    /* @__PURE__ */ React.createElement(PolicyHistory, { id: p.id })
   ))), /* @__PURE__ */ React.createElement("p", { className: "muted" }, "Existing decisions and case history are not changed by policy updates."));
 }
 clientExports.createRoot(document.getElementById("root")).render(/* @__PURE__ */ React.createElement(App, null));

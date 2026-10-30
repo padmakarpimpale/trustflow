@@ -26,5 +26,29 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -r ai-service/requirements.txt
-      - run: python train.py && python -m unittest -v
+      - run: python train.py && python -m unittest -v && python evaluate.py
         working-directory: ai-service
+  integrated:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start Java Python MySQL and Kafka
+        run: docker compose -f compose.yaml -f compose.integrated.yaml -f compose.email-test.yaml up --build -d
+      - name: Verify migrations routing recovery and restore
+        run: python3 scripts/integration-check.py
+      - name: Verify email delivery and SMTP recovery
+        run: python3 scripts/email-integration-check.py
+      - name: Save service logs
+        if: always()
+        run: |
+          mkdir -p test-results
+          docker compose -f compose.yaml -f compose.integrated.yaml -f compose.email-test.yaml logs --no-color > test-results/services.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integrated-evidence
+          path: test-results/
+      - name: Stop test stack
+        if: always()
+        run: docker compose -f compose.yaml -f compose.integrated.yaml -f compose.email-test.yaml down -v

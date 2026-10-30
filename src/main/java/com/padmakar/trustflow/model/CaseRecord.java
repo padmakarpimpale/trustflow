@@ -61,6 +61,15 @@ public class CaseRecord {
 
     private Instant resolvedAt;
 
+    @Column(precision = 12, scale = 2)
+    private BigDecimal policyAmountThreshold;
+
+    private Double policyMinConfidence;
+    private Boolean policyAlwaysReview;
+
+    @Column(length = 80)
+    private String routingVersion;
+
     public Long getId() {
         return id;
     }
@@ -191,5 +200,37 @@ public class CaseRecord {
 
     public void setResolvedAt(Instant resolvedAt) {
         this.resolvedAt = resolvedAt;
+    }
+
+    public BigDecimal getPolicyAmountThreshold() {
+        return policyAmountThreshold;
+    }
+
+    public void setPolicyAmountThreshold(BigDecimal value) {
+        this.policyAmountThreshold = value;
+    }
+
+    public Double getPolicyMinConfidence() {
+        return policyMinConfidence;
+    }
+
+    public void setPolicyMinConfidence(Double value) {
+        this.policyMinConfidence = value;
+    }
+
+    public Boolean getPolicyAlwaysReview() {
+        return policyAlwaysReview;
+    }
+
+    public void setPolicyAlwaysReview(Boolean value) {
+        this.policyAlwaysReview = value;
+    }
+
+    public String getRoutingVersion() {
+        return routingVersion;
+    }
+
+    public void setRoutingVersion(String value) {
+        this.routingVersion = value;
     }
 }

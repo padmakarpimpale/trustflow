@@ -1,0 +1,158 @@
+{
+  "modelVersion": "tfidf-lr-v2-b532561f6e",
+  "examples": 18,
+  "limitations": "Author-designed synthetic challenge set; not real-world or independent external validation. Raw metrics use text alone; service outputs include the fixed title Expense. No retraining or threshold tuning performed.",
+  "rawClassifierAccuracy": 0.7777777777777778,
+  "rawClassifierLogLoss": 0.6188079176054433,
+  "rawClassifierMulticlassBrier": 0.32096177104355833,
+  "scoreOnlyGateCandidates": 2,
+  "scoreOnlyGateUnsafeCandidates": 1,
+  "scoreOnlyGateReviewRate": 0.8888888888888888,
+  "scope": "Score-only gate excludes Java amount/access/text rules. See integrated tests for actual workflow routing.",
+  "cases": [
+    {
+      "text": "Taxi to a customer site; supervisor approved and invoice provided",
+      "label": "APPROVE",
+      "recommendation": "APPROVE",
+      "confidence": 0.5408,
+      "explanation": "Terms supporting this classification: approved, customer, invoice, to. Learned from synthetic examples; score is uncalibrated. Amount and access rules are checked separately.",
+      "modelVersion": "tfidf-lr-v2-b532561f6e"
+    },
+    {
+      "text": "Approved replacement keyboard needed for daily office work",
+      "label": "APPROVE",
+      "recommendation": "APPROVE",
+      "confidence": 0.6342,
+      "explanation": "Terms supporting this classification: approved, office, work, keyboard. Learned from synthetic examples; score is uncalibrated. Amount and access rules are checked separately.",
+      "modelVersion": "tfidf-lr-v2-b532561f6e"
+    },
+    {
+      "text": "Manager authorised rail travel to the customer workshop",
+      "label": "APPROVE",
+      "recommendation": "APPROVE",
+      "confidence": 0.7233,
+      "explanation": "Terms supporting this classification: authorised, customer, to the, workshop. Learned from synthetic examples; score is uncalibrated. Amount and access rules are checked separately.",
+      "modelVersion": "tfidf-lr-v2-b532561f6e"
+    },
+    {
+      "text": "Standard read only reporting access approved by the system owner",
+      "label": "APPROVE",
+      "recommendation": "APPROVE",
+      "confidence": 0.8386,
+      "explanation": "Terms supporting this classification: approved, approved by, read, by. Learned from synthetic examples; score is uncalibrated. Amount and access rules are checked separately.",
+      "modelVersion": "tfidf-lr-v2-b532561f6e"
+    },
+    {
+      "text": "Taxi fare for a client meeting not approved by my manager with no receipt attached",
+      "label": "REVIEW",
+      "recommendation": "APPROVE",
+      "confidence": 0.8184,
+      "explanation": "Terms supporting this classification: approved, with, approved by, meeting. Learned from synthetic examples; score is uncalibrated. Amount and access rules are checked separately.",
+      "modelVersion": "tfidf-lr-v2-b532561f6e"
+    },
+    {
+      "text": "Manager approval has yet to arrive for travel to a customer",
+      "label": "REVIEW",
+      "recommendation": "REVIEW",
+      "confidence": 0.3686,
+      "explanation": "Terms supporting this classification: yet, manager, approval, for travel. Learned from synthetic examples; score is uncalibrated. Amount and access rules are checked separately.",
+      "modelVersion": "tfidf-lr-v2-b532561f6e"
+    },
+    {
+      "text": "Approval withdrawn after the original request was accepted",
+      "label": "REVIEW",
+      "recommendation": "REVIEW",
+      "confidence": 0.7038,
+      "explanation": "Terms supporting this classification: approval, was, request, expense. Learned from synthetic examples; score is uncalibrated. Amount and access rules are checked separately.",
+      "modelVersion": "tfidf-lr-v2-b532561f6e"
+    },
+    {
+      "text": "The receipt was lost but the client meeting did happen",
+      "label": "REVIEW",
+      "recommendation": "APPROVE",
+      "confidence": 0.4554,
+      "explanation": "Terms supporting this classification: meeting, client, the, client meeting. Learned from synthetic examples; score is uncalibrated. Amount and access rules are checked separately.",
+      "modelVersion": "tfidf-lr-v2-b532561f6e"
+    },
+    {
+      "text": "Authorisation is still being discussed with the system owner",
+      "label": "REVIEW",
+      "recommendation": "REVIEW",
+      "confidence": 0.6629,
+      "explanation": "Terms supporting this classification: is, system, is still, still. Learned from synthetic examples; score is uncalibrated. Amount and access rules are checked separately.",
+      "modelVersion": "tfidf-lr-v2-b532561f6e"
+    },
+    {
+      "text": "Emergency unrestricted production access for troubleshooting",
+      "label": "REVIEW",
+      "recommendation": "REVIEW",
+      "confidence": 0.6837,
+      "explanation": "Terms supporting this classification: access for, production, emergency, for troubleshooting. Learned from synthetic examples; score is uncalibrated. Amount and access rules are checked separately.",
+      "modelVersion": "tfidf-lr-v2-b532561f6e"
+    },
+    {
+      "text": "Approved amount differs from the invoice total",
+      "label": "REVIEW",
+      "recommendation": "REVIEW",
+      "confidence": 0.5321,
+      "explanation": "Terms supporting this classification: amount, total, from, from the. Learned from synthetic examples; score is uncalibrated. Amount and access rules are checked separately.",
+      "modelVersion": "tfidf-lr-v2-b532561f6e"
+    },
+    {
+      "text": "Claim includes both a client visit and a family trip",
+      "label": "REVIEW",
+      "recommendation": "REJECT",
+      "confidence": 0.42,
+      "explanation": "Terms supporting this classification: family, claim, family trip, expense. Learned from synthetic examples; score is uncalibrated. Amount and access rules are checked separately.",
+      "modelVersion": "tfidf-lr-v2-b532561f6e"
+    },
+    {
+      "text": "Expense submitted twice for the same taxi receipt",
+      "label": "REJECT",
+      "recommendation": "REJECT",
+      "confidence": 0.663,
+      "explanation": "Terms supporting this classification: the same, same, expense, submitted. Learned from synthetic examples; score is uncalibrated. Amount and access rules are checked separately.",
+      "modelVersion": "tfidf-lr-v2-b532561f6e"
+    },
+    {
+      "text": "Personal video game purchase unrelated to company work",
+      "label": "REJECT",
+      "recommendation": "REJECT",
+      "confidence": 0.8295,
+      "explanation": "Terms supporting this classification: personal, unrelated to, unrelated, to. Learned from synthetic examples; score is uncalibrated. Amount and access rules are checked separately.",
+      "modelVersion": "tfidf-lr-v2-b532561f6e"
+    },
+    {
+      "text": "Please disable logging so nobody can see my database access",
+      "label": "REJECT",
+      "recommendation": "REJECT",
+      "confidence": 0.6303,
+      "explanation": "Terms supporting this classification: disable, so, logging, expense. Learned from synthetic examples; score is uncalibrated. Amount and access rules are checked separately.",
+      "modelVersion": "tfidf-lr-v2-b532561f6e"
+    },
+    {
+      "text": "Reimbursement for a fabricated trip that never happened",
+      "label": "REJECT",
+      "recommendation": "REJECT",
+      "confidence": 0.7709,
+      "explanation": "Terms supporting this classification: that, reimbursement, that never, fabricated. Learned from synthetic examples; score is uncalibrated. Amount and access rules are checked separately.",
+      "modelVersion": "tfidf-lr-v2-b532561f6e"
+    },
+    {
+      "text": "Subscription for private entertainment at home",
+      "label": "REJECT",
+      "recommendation": "REJECT",
+      "confidence": 0.8484,
+      "explanation": "Terms supporting this classification: private, entertainment, for private, subscription for. Learned from synthetic examples; score is uncalibrated. Amount and access rules are checked separately.",
+      "modelVersion": "tfidf-lr-v2-b532561f6e"
+    },
+    {
+      "text": "Family holiday travel claimed as a business expense",
+      "label": "REJECT",
+      "recommendation": "REJECT",
+      "confidence": 0.7301,
+      "explanation": "Terms supporting this classification: family, as, claimed as, expense. Learned from synthetic examples; score is uncalibrated. Amount and access rules are checked separately.",
+      "modelVersion": "tfidf-lr-v2-b532561f6e"
+    }
+  ]
+}
