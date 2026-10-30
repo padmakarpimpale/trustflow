@@ -25,6 +25,23 @@ public class EmailConfiguration {
         );
     }
 
+    // Keep SMTP timeouts off the scheduler used to publish in-app notification events.
+    @Bean
+    org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler taskScheduler() {
+        var scheduler = new org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler();
+        scheduler.setPoolSize(1);
+        scheduler.setThreadNamePrefix("outbox-");
+        return scheduler;
+    }
+
+    @Bean
+    org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler emailTaskScheduler() {
+        var scheduler = new org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler();
+        scheduler.setPoolSize(1);
+        scheduler.setThreadNamePrefix("email-");
+        return scheduler;
+    }
+
     @Bean
     NewTopic emailDeadLetterTopic() {
         return TopicBuilder.name("trustflow-notifications.email.DLT")

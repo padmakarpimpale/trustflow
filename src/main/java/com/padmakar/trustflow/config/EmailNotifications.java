@@ -41,7 +41,10 @@ public class EmailNotifications {
         queue.enqueue(mapper.readValue(json, NotificationService.Notice.class));
     }
 
-    @Scheduled(fixedDelayString = "${trustflow.email.poll-ms:5000}")
+    @Scheduled(
+        fixedDelayString = "${trustflow.email.poll-ms:5000}",
+        scheduler = "emailTaskScheduler"
+    )
     public void dispatch() {
         for (var delivery : deliveries.findTop20ByStatusAndNextAttemptAtLessThanEqualOrderByIdAsc(
             "PENDING",
