@@ -6,9 +6,9 @@ services:
       KAFKA_SERVERS: kafka:9092
     depends_on:
       ai:
-        condition: service_started
+        condition: service_healthy
       kafka:
-        condition: service_started
+        condition: service_healthy
   ai:
     build: ./ai-service
     ports: ["127.0.0.1:8000:8000"]
@@ -29,3 +29,15 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
     ports: ["127.0.0.1:9094:9094"]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/opt/kafka/bin/kafka-topics.sh",
+          "--bootstrap-server",
+          "localhost:9092",
+          "--list",
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 20

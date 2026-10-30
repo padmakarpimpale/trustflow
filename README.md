@@ -2,88 +2,105 @@
 
 Human-in-the-Loop AI Decision Review and Escalation Platform
 
-TrustFlow is a coursework application that combines machine-learning recommendations with business rules to process expense claims and access requests. Cases that require judgement are sent to a human reviewer, and each decision is recorded in an audit history.
-
-## Features
-
-- Role-based login for employees, reviewers and administrators
-- Expense claim and access request submission
-- Machine-learning recommendations with model scores
-- Automatic approval for eligible requests
-- Human review and recommendation overrides
-- Configurable review policies
-- Notifications and audit history
-- Administrative dashboard
-
-## Technology
-
-| Component | Technology |
-|---|---|
-| Frontend | React, Vite, CSS |
-| Backend | Java, Spring Boot, REST APIs |
-| Authentication | Spring Security |
-| Persistence | Spring Data JPA, Hibernate |
-| Default database | H2 |
-| Optional database | MySQL |
-| Model service | Python, FastAPI, scikit-learn |
-| Model | TF-IDF and logistic regression |
-| Optional messaging | Apache Kafka |
-| Build and deployment | Maven, Docker, GitHub Actions |
+TrustFlow processes employee expense claims and access requests. A trained text classifier recommends a decision. Spring Boot checks that recommendation against business policies, sends uncertain or restricted cases to a reviewer, and records the outcome and its reasons.
 
 ## Architecture
 
-The application contains a React frontend, a Spring Boot business backend and a separate Python inference service.
+| Part | Implementation |
+| --- | --- |
+| User interface | React, Vite, CSS, REST requests |
+| Business backend | Java 17+, Spring Boot, controller/service/repository layers |
+| Security | Spring Security sessions, BCrypt passwords, CSRF, role and ownership checks |
+| Persistence | Spring Data JPA, Hibernate, MySQL 8.4 and Flyway migrations |
+| Inference | Python FastAPI, scikit-learn TF-IDF and logistic regression |
+| Notifications | Transactional database outbox, Kafka, idempotent consumer and dead-letter topic |
+| Operations | Docker Compose, Actuator health, request IDs, GitHub Actions |
 
-React communicates with Spring Boot through REST APIs. Spring Boot requests a prediction from Python, applies the review policies and saves the result. Kafka is available through the optional integrated configuration.
+This is a layered Java backend with a separately deployed Python inference service. Business modules share the Java application and database; they are not independently deployed microservices. Notifications are event-driven; inference uses synchronous HTTP. Service discovery, an API gateway and full distributed tracing are not implemented.
 
-## How decisions work
+The full demonstration uses MySQL and Kafka. A simpler H2/local-notification profile remains available for development and tests.
 
-A request is automatically approved only when:
+## Decision workflow
 
-- The model recommends APPROVE.
-- Its score meets the configured minimum.
-- The request passes the amount and access checks.
-- Mandatory human review is disabled for that request type.
-- The text review safeguard does not flag the request.
-- The model service returns a valid response.
+1. An employee submits an expense claim or access request.
+2. Python returns APPROVE, REVIEW or REJECT, a model score and supporting terms.
+3. Spring Boot automatically approves only when the recommendation is APPROVE, the score meets policy, the amount is within policy, mandatory review is disabled, and neither privileged access nor the text safeguard requires review.
+4. All other cases go to a reviewer, including AI failures. There is no automatic rejection.
+5. The reviewer approves or rejects with a reason. A decision against APPROVE/REJECT is recorded as an override. Version checks and a unique review constraint prevent two final decisions.
+6. The case, audit entries and notification outbox entries commit together. Kafka delivers notifications asynchronously; duplicate deliveries do not create duplicate notices.
 
-Otherwise, the case is sent for human review. The application does not automatically reject requests.
+Defaults are minimum score 0.80, expense limit SGD500, and mandatory review for access requests. Administrators can change policy. Each new case saves the policy values, policy version, model version and text-guard version used. Policy changes have their own history. Historical cases without snapshots show that the values are unavailable.
 
-Default settings:
+## Run on Windows with Docker (recommended)
 
-| Setting | Value |
-|---|---|
-| Minimum model score | 0.80 |
-| Expense amount limit | SGD500 |
-| Access requests | Human review required |
+Install Docker Desktop with Linux containers, and Git. Start Docker Desktop before running these commands. Java, Python, Node and MySQL are built or run inside containers.
 
-Administrators can change the policies. Changes apply to new submissions; existing decisions retain their history.
-
-A separate text safeguard sends requests containing indications of negation, missing evidence or unresolved approval to a reviewer, even when the model score is high.
-
-## Requirements
-
-- JDK 21
-- Python 3.12
-- IntelliJ IDEA or another Java IDE
-- Git
-
-Node.js is required only when editing or rebuilding the React frontend. Built frontend files are included.
-
-## Run locally
-
-### 1. Clone the repository
-
-Run in Windows PowerShell:
+From a new folder in PowerShell:
 
 ```powershell
-git clone https://github.com/padmakarpimpale/trustflow.git
-cd trustflow
+git clone --branch feature/architecture-upgrade https://github.com/padmakarpimpale/trustflow.git trustflow-updated
+cd trustflow-updated
+docker compose -f compose.yaml -f compose.integrated.yaml up --build -d
+docker compose -f compose.yaml -f compose.integrated.yaml ps
 ```
 
-### 2. Start the Python service
+The first build downloads dependencies and takes several minutes. Open **http://localhost:8080** after startup. Check readiness at **http://localhost:8080/actuator/health/readiness**. Python documentation is at http://localhost:8000/docs; Python has no homepage at `/`.
 
-Run these commands one at a time:
+If startup fails, inspect the logs:
+
+```powershell
+docker compose -f compose.yaml -f compose.integrated.yaml logs --tail=100 app ai mysql kafka
+```
+
+Stop the stack while preserving the database:
+
+```powershell
+docker compose -f compose.yaml -f compose.integrated.yaml down
+```
+
+MySQL data is stored in a named volume. Do not add `-v` when stopping a stack containing data you want to keep. The integration-test workflow uses disposable data and removes only its own runner volume.
+
+### Demo accounts
+
+| Username | Role |
+| --- | --- |
+| employee / employee2 | Submit and track their own requests |
+| reviewer / reviewer2 | Review cases and record decisions |
+| admin | View analytics, policies and policy-change history |
+
+Password: `TrustFlow123!`. These are seeded local coursework accounts, not production credentials. Credentials are documented here, not displayed on the sign-in page.
+
+## Run Java in IntelliJ with MySQL and Kafka
+
+Use JDK21, Node22 and Docker Desktop. Open the root `pom.xml` in IntelliJ and allow Maven to import. Do not run the Docker Java app and the IntelliJ Java app at the same time on port 8080.
+
+Start the dependencies only:
+
+```powershell
+docker compose -f compose.yaml -f compose.integrated.yaml stop app
+docker compose -f compose.yaml -f compose.integrated.yaml up -d mysql ai kafka
+cd frontend
+npm ci
+npm run build
+cd ..
+```
+
+Configure `TrustflowApplication` with the repository root as its working directory and these environment variables (one per entry in IntelliJ):
+
+```text
+SPRING_PROFILES_ACTIVE=mysql,integrated
+DB_URL=jdbc:mysql://localhost:3307/trustflow
+DB_USER=trustflow
+DB_PASSWORD=coursework-demo-only
+AI_URL=http://localhost:8000/predict
+KAFKA_SERVERS=localhost:9094
+```
+
+Run `TrustflowApplication.java`, then open http://localhost:8080. For frontend development, `npm run dev` inside `frontend` proxies API requests to Java. Rebuild with `npm run build` to package UI changes into the Java app.
+
+### Simple local development without Docker
+
+The default Java profile uses persistent H2 and local notifications. Install JDK21 and Python 3.11 or 3.12. Check installed Python versions with `py --list`; use an installed supported version instead of assuming 3.12 exists.
 
 ```powershell
 cd ai-service
@@ -93,120 +110,64 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m uvicorn app:app --host 127.0.0.1 --port 8000
 ```
 
-Leave this terminal running.
-
-Training creates the model artifact using the installed dependencies. It is required during initial setup and after changing the training data or relevant dependencies.
-
-### 3. Start Spring Boot
-
-In IntelliJ:
-
-1. Open the repository folder containing `pom.xml`.
-2. Allow Maven to load the dependencies.
-3. Select JDK 21.
-4. Set the run working directory to the repository root.
-5. Run `TrustflowApplication.java`.
-
-Alternatively, open a second PowerShell window at the repository root:
+Leave Python running. In a second PowerShell window at the repository root:
 
 ```powershell
 .\mvnw.cmd spring-boot:run
 ```
 
-### 4. Open TrustFlow
+H2 files are under `data/` relative to Java's working directory. Use the same working directory each time. Switching to MySQL does not copy existing H2 records.
 
-Application: http://localhost:8080
+## Database migrations, export and restore
 
-AI API documentation: http://127.0.0.1:8000/docs
+Fresh MySQL installations run Flyway V1/V2, then Hibernate validates the schema. Existing unmanaged MySQL databases are not automatically baselined. Back up first and follow `database/UPGRADE.md`; do not delete existing data to bypass migration errors.
 
-The Python service has no homepage at `/`, so opening port 8000 directly may return 404.
-
-## Local demonstration accounts
-
-| Username | Role |
-|---|---|
-| employee | Submit and track requests |
-| reviewer | Review cases and record decisions |
-| admin | View analytics and manage policies |
-
-Password for these local accounts: `TrustFlow123!`
-
-These seeded accounts are for coursework demonstrations, not public deployment.
-
-## Example requests
-
-Use request type **Expense claim**, title **Business travel expense** and amount **SGD20**.
-
-| Justification | Expected routing under default settings |
-|---|---|
-| Taxi fare for a client meeting | Human review because of the low model score |
-| Taxi fare for a client meeting approved by my manager with receipt attached | Automatic approval |
-| Taxi fare for a client meeting not approved by my manager with no receipt attached | Human review because of the text safeguard |
-
-These examples demonstrate the workflow. Statements about receipts or approval are not independently verified by the application.
-
-## Frontend development
-
-With Spring Boot running, open PowerShell at the repository root:
+With MySQL client tools on PATH, export from the host (the Docker MySQL host port is 3307):
 
 ```powershell
-cd frontend
-npm ci
-npm run dev
+.\scripts\export-mysql.ps1
+.\scripts\restore-mysql.ps1 -Database trustflow_restore
 ```
 
-To rebuild the frontend:
+The scripts prompt for passwords. Export uses the `trustflow` user (`coursework-demo-only` by default); restore uses root (`local-root-demo-only` by default). Restore creates a separate new database and refuses to replace `trustflow`. The dump includes user password hashes, so keep it within the coursework submission. The old H2 sample dump is not a MySQL export.
 
-```powershell
-npm run build
-```
+## Demonstration (5–10 minutes)
 
-Vite writes the built files into Spring Boot's static resources. Restart the Java application after rebuilding.
+Use title **Business travel expense**, type **Expense claim**, and this justification for the first two cases:
 
-## Tests
+> Taxi fare for a client meeting approved by my manager with receipt attached
 
-From the repository root:
+| Step | Expected result under default policy |
+| --- | --- |
+| Employee submits SGD20 | Automatic approval |
+| Employee submits SGD1200 | Human review because amount exceeds 500 |
+| Employee submits SGD20 with “Taxi fare for a client meeting” | Human review because model score is low |
+| Employee submits SGD20 with “Taxi fare for a client meeting not approved by my manager with no receipt attached” | Text safeguard requires review despite a high model score |
+| Reviewer rejects the SGD1200 case with a budget reason | Final rejection, override recorded in audit history |
+| Employee opens notifications | Decision notification is visible |
+| Admin changes expense threshold to 10 | History records the change; previous case retains its original policy snapshot |
+
+Restore the expense threshold to 500 after the demonstration if you want to repeat the default examples. Receipts and manager approval are text supplied by the employee; the application does not verify them.
+
+## Verification
 
 ```powershell
 .\mvnw.cmd verify
-```
-
-For the Python service:
-
-```powershell
-cd ai-service
+cd frontend
+npm ci
+npm run build
+cd ..\ai-service
+.\.venv\Scripts\python.exe train.py
 .\.venv\Scripts\python.exe -m unittest -v
+.\.venv\Scripts\python.exe evaluate.py
 ```
 
-The latest local verification included 44 Java tests, 5 Python tests and an integrated browser workflow. GitHub Actions also builds the frontend and runs the Java and Python tests.
+Java tests cover routing, security, validation, concurrent review, policy snapshots/history, pagination and outbox retries. Python tests cover inference and its response contract. `scripts/browser-check.cjs` exercises the React workflow against an isolated in-memory H2 app and real inference service; it needs Playwright Chromium and `AI_PYTHON` set to the Python environment executable.
 
-## Project structure
+GitHub Actions also starts the full MySQL/Kafka Compose stack and runs `scripts/integration-check.py`. This checks migrations, real-model routing, Kafka outage/recovery, duplicate delivery, poison messages, AI failure, restart persistence and dump/restore. Run it only against a fresh isolated demonstration stack: it creates cases, changes policy, stops services and creates `trustflow_restore`. Its output and service logs are uploaded as `integrated-evidence`. Check the actual workflow result before treating these checks as passed.
 
-```text
-ai-service/     Python inference service, training data and model
-database/       Database scripts and sample dump
-frontend/       React source and Vite configuration
-scripts/        Browser checks and database export script
-src/main/       Spring Boot source and resources
-src/test/       Java tests
-.github/        GitHub Actions workflow
-pom.xml         Maven configuration
-```
+## Scope and limitations
 
-## Database
+The classifier learns from 90 synthetic training examples. The 30-example synthetic holdout shares similar vocabulary and does not establish real-world accuracy. An additional 18-example challenge evaluation reports errors, log loss, Brier score and hypothetical score-only routing; it is also synthetic, not external validation. Scores are uncalibrated and must not be described as verified accuracy. Reviewer decisions do not automatically retrain the model.
 
-The default configuration uses a local H2 database stored under `data/` relative to the Java application's working directory.
-
-Use a consistent working directory to avoid creating separate databases. Stop the application before backing up its database files.
-
-If startup reports that the database is already in use, stop other TrustFlow instances or disconnect another H2 connection. Do not delete the database to resolve a lock.
-
-## Model limitations
-
-The classifier is trained on 90 synthetic examples and evaluated on 30 separately authored synthetic examples. The datasets share similar vocabulary and do not establish real-world accuracy.
-
-The model score is uncalibrated. A score of 90% does not mean the decision has a verified 90% probability of being correct.
-
-The text safeguard is conservative and rule-based. It may send harmless requests for review and may miss unfamiliar wording. The application does not verify receipts, confirm manager approval or automatically retrain from reviewer decisions.
-
-TrustFlow demonstrates an oversight workflow; it is not a production financial or access-control decision system.
+This project demonstrates controlled automation, human escalation and traceable decisions for expense and access requests. It does not reimburse money, provision access, check attachments, provide a tamper-proof audit ledger or run a highly available Kafka cluster. Request IDs support log correlation, not full distributed tracing. Future applications could include procurement approval and document triage after domain-specific data collection, evaluation and integration.

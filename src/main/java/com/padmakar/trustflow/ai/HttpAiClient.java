@@ -29,6 +29,13 @@ public class HttpAiClient implements AiClient {
             HttpRequest request = HttpRequest.newBuilder(URI.create(url))
                 .timeout(Duration.ofSeconds(3))
                 .header("Content-Type", "application/json")
+                .header(
+                    "X-Request-ID",
+                    java.util.Objects.toString(
+                        org.slf4j.MDC.get("requestId"),
+                        java.util.UUID.randomUUID().toString()
+                    )
+                )
                 .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(form)))
                 .build();
             HttpResponse<String> response = client.send(

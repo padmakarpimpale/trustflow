@@ -37,7 +37,9 @@ public class SecurityConfig {
                 auth
                     .requestMatchers("/login", "/app/**", "/api/csrf", "/style.css", "/error")
                     .permitAll()
-                    .requestMatchers("/admin/**", "/api/admin/**")
+                    .requestMatchers("/actuator/health", "/actuator/health/**")
+                    .permitAll()
+                    .requestMatchers("/actuator/**", "/admin/**", "/api/admin/**")
                     .hasRole("ADMIN")
                     .requestMatchers("/cases/*/review")
                     .hasRole("REVIEWER")

@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.*;
 public class CaseApiController {
 
     private final CaseService cases;
+    private final CaseQueryService queries;
+    private final PolicyChangeRepository policyChanges;
     private final AuditEntryRepository audit;
     private final ReviewRecordRepository reviews;
     private final PolicyRepository policies;
@@ -28,6 +30,8 @@ public class CaseApiController {
 
     public CaseApiController(
         CaseService cases,
+        CaseQueryService queries,
+        PolicyChangeRepository policyChanges,
         AuditEntryRepository audit,
         ReviewRecordRepository reviews,
         PolicyRepository policies,
@@ -37,6 +41,8 @@ public class CaseApiController {
         @Value("${trustflow.ai.mode}") String aiMode
     ) {
         this.cases = cases;
+        this.queries = queries;
+        this.policyChanges = policyChanges;
         this.audit = audit;
         this.reviews = reviews;
         this.policies = policies;
@@ -61,6 +67,10 @@ public class CaseApiController {
         String explanation,
         String modelVersion,
         Long policyVersion,
+        BigDecimal policyAmountThreshold,
+        Double policyMinConfidence,
+        Boolean policyAlwaysReview,
+        String routingVersion,
         String escalationReason,
         Instant createdAt,
         Instant resolvedAt
@@ -81,6 +91,10 @@ public class CaseApiController {
                 c.getExplanation(),
                 c.getModelVersion(),
                 c.getPolicyVersion(),
+                c.getPolicyAmountThreshold(),
+                c.getPolicyMinConfidence(),
+                c.getPolicyAlwaysReview(),
+                c.getRoutingVersion(),
                 c.getEscalationReason(),
                 c.getCreatedAt(),
                 c.getResolvedAt()
@@ -131,9 +145,30 @@ public class CaseApiController {
         );
     }
 
-    @GetMapping("/cases")
-    public List<CaseView> list(Principal principal) {
-        return cases.visibleCases(principal.getName()).stream().map(CaseView::from).toList();
+    public record PageView<T>(List<T> content, int number, int totalPages, long totalElements) {}
+
+    @GetMapping({ "/cases", "/cases/page" })
+    public PageView<CaseView> page(
+        Principal principal,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "8") int size,
+        @RequestParam(required = false) CaseStatus status,
+        @RequestParam(required = false) CaseType type,
+        @RequestParam(defaultValue = "") String q,
+        @RequestParam(defaultValue = "newest") String sort
+    ) {
+        var result = queries.search(principal.getName(), status, type, q, page, size, sort);
+        return new PageView<>(
+            result.getContent().stream().map(CaseView::from).toList(),
+            result.getNumber(),
+            result.getTotalPages(),
+            result.getTotalElements()
+        );
+    }
+
+    @GetMapping("/cases/summary")
+    public Map<String, Long> summary(Principal principal) {
+        return queries.summary(principal.getName());
     }
 
     @PostMapping("/cases")
@@ -199,17 +234,64 @@ public class CaseApiController {
     }
 
     @GetMapping("/admin/policies")
-    public List<Policy> policies() {
-        return policies.findAll();
+    public List<PolicyView> policies() {
+        return policies.findAll().stream().map(PolicyView::from).toList();
+    }
+
+    public record PolicyView(
+        Long id,
+        Long version,
+        CaseType type,
+        BigDecimal amountThreshold,
+        double minConfidence,
+        boolean alwaysReview
+    ) {
+        static PolicyView from(Policy p) {
+            return new PolicyView(
+                p.getId(),
+                p.getVersion(),
+                p.getType(),
+                p.getAmountThreshold(),
+                p.getMinConfidence(),
+                p.isAlwaysReview()
+            );
+        }
+    }
+
+    @GetMapping("/admin/policies/{id}/history")
+    public PageView<PolicyChange> policyHistory(
+        @PathVariable Long id,
+        @RequestParam(defaultValue = "0") int page
+    ) {
+        if (page < 0) throw new IllegalArgumentException("Invalid page");
+        if (!policies.existsById(id)) throw new RecordNotFoundException("Policy not found");
+        var result = policyChanges.findByPolicyId(
+            id,
+            org.springframework.data.domain.PageRequest.of(
+                page,
+                20,
+                org.springframework.data.domain.Sort.by("id").descending()
+            )
+        );
+        return new PageView<>(
+            result.getContent(),
+            result.getNumber(),
+            result.getTotalPages(),
+            result.getTotalElements()
+        );
     }
 
     @PutMapping("/admin/policies/{id}")
     @ResponseStatus(org.springframework.http.HttpStatus.NO_CONTENT)
-    public void policy(@PathVariable Long id, @Valid @RequestBody PolicyForm form) {
+    public void policy(
+        @PathVariable Long id,
+        @Valid @RequestBody PolicyForm form,
+        Principal principal
+    ) {
         if (!Double.isFinite(form.minConfidence())) throw new IllegalArgumentException(
             "Invalid score"
         );
-        policyService.update(id, form);
+        policyService.update(id, form, principal.getName());
     }
 
     @GetMapping("/admin/analytics")
@@ -222,8 +304,7 @@ public class CaseApiController {
                     Duration.between(r.getCaseRecord().getCreatedAt(), r.getCreatedAt()).toSeconds()
                 )
                 .average()
-                .orElse(0) /
-            60;
+                .orElse(0) / 60;
         return Map.of(
             "reviewCount",
             decisions.size(),

@@ -40,56 +40,50 @@ class ReactApiTest {
 
     @Test
     void csrfTokenIsAvailableBeforeLogin() throws Exception {
-        mvc
-            .perform(get("/api/csrf"))
+        mvc.perform(get("/api/csrf"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.token").isNotEmpty());
     }
 
     @Test
     void caseWriteRequiresCsrf() throws Exception {
-        mvc
-            .perform(
-                post("/api/cases")
-                    .with(user("employee").roles("SUBMITTER"))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(expense)
-            )
-            .andExpect(status().isForbidden());
+        mvc.perform(
+            post("/api/cases")
+                .with(user("employee").roles("SUBMITTER"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(expense)
+        ).andExpect(status().isForbidden());
     }
 
     @Test
     void employeeCannotManagePolicies() throws Exception {
-        mvc
-            .perform(get("/api/admin/policies").with(user("employee").roles("SUBMITTER")))
-            .andExpect(status().isForbidden());
+        mvc.perform(get("/api/admin/policies").with(user("employee").roles("SUBMITTER"))).andExpect(
+            status().isForbidden()
+        );
     }
 
     @Test
     void validationErrorsAreJson() throws Exception {
-        mvc
-            .perform(
-                post("/api/cases")
-                    .with(user("employee").roles("SUBMITTER"))
-                    .with(csrf())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("{\"type\":\"EXPENSE\",\"title\":\"\",\"description\":\"short\"}")
-            )
+        mvc.perform(
+            post("/api/cases")
+                .with(user("employee").roles("SUBMITTER"))
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"type\":\"EXPENSE\",\"title\":\"\",\"description\":\"short\"}")
+        )
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.fields.title").exists());
     }
 
     @Test
     void reviewerCannotSubmit() throws Exception {
-        mvc
-            .perform(
-                post("/api/cases")
-                    .with(user("reviewer").roles("REVIEWER"))
-                    .with(csrf())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(expense)
-            )
-            .andExpect(status().isForbidden());
+        mvc.perform(
+            post("/api/cases")
+                .with(user("reviewer").roles("REVIEWER"))
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(expense)
+        ).andExpect(status().isForbidden());
     }
 
     @Test
@@ -108,21 +102,20 @@ class ReactApiTest {
             .andReturn();
         var record = mapper.readTree(result.getResponse().getContentAsString());
         String url = "/api/cases/" + record.get("id").asLong();
-        mvc
-            .perform(get(url).with(user("employee2").roles("SUBMITTER")))
-            .andExpect(status().isForbidden());
-        mvc
-            .perform(
-                post(url + "/review")
-                    .with(user("reviewer").roles("REVIEWER"))
-                    .with(csrf())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(
-                        "{\"version\":" +
-                            record.get("version") +
-                            ",\"decision\":\"REJECTED\",\"reason\":\"Budget unavailable\"}"
-                    )
-            )
+        mvc.perform(get(url).with(user("employee2").roles("SUBMITTER"))).andExpect(
+            status().isForbidden()
+        );
+        mvc.perform(
+            post(url + "/review")
+                .with(user("reviewer").roles("REVIEWER"))
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"version\":" +
+                        record.get("version") +
+                        ",\"decision\":\"REJECTED\",\"reason\":\"Budget unavailable\"}"
+                )
+        )
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.review.overridden").value(true))
             .andExpect(jsonPath("$.record.status").value("REJECTED"));

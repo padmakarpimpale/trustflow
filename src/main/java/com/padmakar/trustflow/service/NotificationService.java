@@ -55,10 +55,24 @@ public class NotificationService {
 
     @Transactional
     public void accept(Notice notice) {
+        if (
+            notice == null ||
+            notice.eventId() == null ||
+            notice.eventId().length() > 36 ||
+            notice.eventId().isBlank() ||
+            notice.recipientId() == null ||
+            notice.caseId() == null ||
+            notice.message() == null ||
+            notice.message().isBlank() ||
+            notice.message().length() > 500
+        ) {
+            throw new IllegalArgumentException("Invalid notification payload");
+        }
+        UserAccount recipient = users.lockById(notice.recipientId()).orElseThrow();
         if (notifications.existsByEventId(notice.eventId())) return;
         Notification notification = new Notification();
         notification.setEventId(notice.eventId());
-        notification.setRecipient(users.findById(notice.recipientId()).orElseThrow());
+        notification.setRecipient(recipient);
         notification.setCaseId(notice.caseId());
         notification.setMessage(notice.message());
         notification.setCreatedAt(Instant.now());

@@ -37,7 +37,9 @@ const label = (value) =>
     REVIEW: "Review",
   })[value] || value;
 const money = (value) =>
-  new Intl.NumberFormat("en-SG", { style: "currency", currency: "SGD" }).format(value);
+  new Intl.NumberFormat("en-SG", { style: "currency", currency: "SGD" }).format(
+    value,
+  );
 const date = (value) =>
   value
     ? new Date(value).toLocaleString("en-SG", {
@@ -79,7 +81,7 @@ function App() {
     [booting, setBooting] = useState(true),
     [bootError, setBootError] = useState(null);
   const [route, setRoute] = useState(location.hash.slice(1) || "dashboard");
-  const [records, setRecords] = useState([]),
+  const [records, setRecords] = useState({ total: 0 }),
     [notices, setNotices] = useState([]),
     [error, setError] = useState(null),
     [loading, setLoading] = useState(false),
@@ -106,7 +108,7 @@ function App() {
     setError(null);
     try {
       const [cases, alerts] = await Promise.all([
-        request("/api/cases"),
+        request("/api/cases/summary"),
         request("/api/notifications"),
       ]);
       setRecords(cases);
@@ -121,7 +123,8 @@ function App() {
   useEffect(() => {
     if (session) reload();
   }, [session]);
-  if (booting) return <div className="loading-page">Opening your workspace…</div>;
+  if (booting)
+    return <div className="loading-page">Opening your workspace…</div>;
   if (!session)
     return (
       <Login
@@ -143,10 +146,18 @@ function App() {
   };
   const nav = [
     ["dashboard", LayoutDashboard, "Overview"],
-    ["cases", FileText, session.role === "SUBMITTER" ? "My cases" : "All cases"],
-    ...(session.role === "REVIEWER" ? [["pending", Clock3, "Review queue"]] : []),
+    [
+      "cases",
+      FileText,
+      session.role === "SUBMITTER" ? "My cases" : "All cases",
+    ],
+    ...(session.role === "REVIEWER"
+      ? [["pending", Clock3, "Review queue"]]
+      : []),
     ["notifications", Bell, "Notifications"],
-    ...(session.role === "ADMIN" ? [["policies", SlidersHorizontal, "Review policies"]] : []),
+    ...(session.role === "ADMIN"
+      ? [["policies", SlidersHorizontal, "Review policies"]]
+      : []),
   ];
   return (
     <div className="app-shell">
@@ -160,7 +171,11 @@ function App() {
         <div className="workspace-label">DECISION WORKSPACE</div>
         <nav>
           {nav.map(([key, Icon, title]) => (
-            <a key={key} href={"#" + key} className={route === key ? "active" : ""}>
+            <a
+              key={key}
+              href={"#" + key}
+              className={route === key ? "active" : ""}
+            >
               <Icon size={18} />
               {title}
               {key === "notifications" && unread > 0 && <small>{unread}</small>}
@@ -207,8 +222,14 @@ function App() {
             <strong>{titles[route] || "Case details"}</strong>
           </div>
           <div>
-            {session.aiMode !== "http" && <span className="mode">Simulation mode</span>}
-            <button className="icon-button" aria-label="Refresh workspace" onClick={reload}>
+            {session.aiMode !== "http" && (
+              <span className="mode">Simulation mode</span>
+            )}
+            <button
+              className="icon-button"
+              aria-label="Refresh workspace"
+              onClick={reload}
+            >
               <RefreshCw size={17} className={loading ? "spin" : ""} />
             </button>
           </div>
@@ -216,7 +237,11 @@ function App() {
         <main>
           <ErrorBox error={error} />
           {route.startsWith("case/") ? (
-            <Detail id={route.split("/")[1]} session={session} onChange={reload} />
+            <Detail
+              id={route.split("/")[1]}
+              session={session}
+              onChange={reload}
+            />
           ) : route === "new" ? (
             session.role === "SUBMITTER" ? (
               <NewCase
@@ -240,7 +265,12 @@ function App() {
               <Empty title="Administrator access required" />
             )
           ) : (
-            <Dashboard records={records} session={session} route={route} loading={loading} />
+            <Dashboard
+              records={records}
+              session={session}
+              route={route}
+              loading={loading}
+            />
           )}
         </main>
         <footer>
@@ -322,15 +352,54 @@ function Dashboard({ records, session, route, loading }) {
         .then(setAnalytics)
         .catch(() => setAnalytics(null));
   }, [session, records]);
-  const count = (status) => records.filter((c) => c.status === status).length;
-  const filtered = records.filter(
-    (c) =>
-      (filter === "ALL" || c.status === filter) &&
-      `${c.id} ${c.title} ${c.owner}`.toLowerCase().includes(search.toLowerCase()),
-  );
-  const pages = Math.max(1, Math.ceil(filtered.length / 8));
-  useEffect(() => setPage(1), [search, filter]);
-  useEffect(() => setPage((p) => Math.min(p, pages)), [pages]);
+  const [result, setResult] = useState({
+    content: [],
+    totalElements: 0,
+    totalPages: 0,
+  });
+  const [queryError, setQueryError] = useState(null);
+  const [queryLoading, setQueryLoading] = useState(false);
+  const [type, setType] = useState("ALL"),
+    [sort, setSort] = useState("newest");
+  const count = (status) => records[status] || 0;
+  const filtered = result.content;
+  const pages = Math.max(1, result.totalPages);
+  useEffect(() => setPage(1), [search, filter, type, sort]);
+  useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setQueryLoading(true);
+      setQueryError(null);
+      const params = new URLSearchParams({
+        page: String(page - 1),
+        size: "8",
+        q: search,
+        sort,
+      });
+      if (filter !== "ALL") params.set("status", filter);
+      if (type !== "ALL") params.set("type", type);
+      try {
+        const data = await request("/api/cases/page?" + params, {
+          signal: controller.signal,
+        });
+        if (active) {
+          setResult(data);
+          if (data.totalPages > 0 && page > data.totalPages)
+            setPage(data.totalPages);
+        }
+      } catch (e) {
+        if (active && e.name !== "AbortError") setQueryError(e);
+      } finally {
+        if (active) setQueryLoading(false);
+      }
+    }, 200);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [page, search, filter, type, sort, records]);
   const overview = route === "dashboard";
   return (
     <>
@@ -357,7 +426,7 @@ function Dashboard({ records, session, route, loading }) {
         <>
           <div className="stats">
             {[
-              ["Total cases", records.length, FileText, "total"],
+              ["Total cases", records.total, FileText, "total"],
               ["Needs review", count("PENDING_REVIEW"), Clock3, "pending"],
               ["Approved", count("APPROVED"), Check, "approved"],
               ["Rejected", count("REJECTED"), X, "rejected"],
@@ -392,7 +461,8 @@ function Dashboard({ records, session, route, loading }) {
           <div>
             <h2>{overview ? "Case activity" : "Requests"}</h2>
             <p>
-              {filtered.length} {filtered.length === 1 ? "case" : "cases"} in this view
+              {result.totalElements}{" "}
+              {result.totalElements === 1 ? "case" : "cases"} in this view
             </p>
           </div>
           <div className="search">
@@ -400,6 +470,7 @@ function Dashboard({ records, session, route, loading }) {
             <input
               aria-label="Search cases"
               placeholder="Search title, ID or employee"
+              maxLength={120}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -407,18 +478,43 @@ function Dashboard({ records, session, route, loading }) {
         </div>
         <div className="filters">
           {["ALL", "PENDING_REVIEW", "APPROVED", "REJECTED"].map((f) => (
-            <button key={f} onClick={() => setFilter(f)} className={filter === f ? "selected" : ""}>
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={filter === f ? "selected" : ""}
+            >
               {f === "ALL" ? "All cases" : label(f)}
             </button>
           ))}
         </div>
-        {loading && !records.length ? (
+        <div className="filters">
+          <select
+            aria-label="Case type"
+            value={type}
+            onChange={(e) => setType(e.target.value)}
+          >
+            <option value="ALL">All types</option>
+            <option value="EXPENSE">Expense claims</option>
+            <option value="ACCESS">Access requests</option>
+          </select>
+          <select
+            aria-label="Sort cases"
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+          >
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="amount">Highest amount</option>
+          </select>
+        </div>
+        <ErrorBox error={queryError} />
+        {queryLoading ? (
           <p className="empty">Loading cases…</p>
         ) : !filtered.length ? (
           <Empty
-            title={records.length ? "No matching cases" : "No requests yet"}
+            title={records.total ? "No matching cases" : "No requests yet"}
             detail={
-              records.length
+              records.total
                 ? "Try another search or status filter."
                 : "New requests will appear here with their status and recommendation."
             }
@@ -440,7 +536,7 @@ function Dashboard({ records, session, route, loading }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.slice((page - 1) * 8, page * 8).map((c) => (
+                  {filtered.map((c) => (
                     <tr key={c.id}>
                       <td>
                         <a className="case-title" href={"#case/" + c.id}>
@@ -473,7 +569,10 @@ function Dashboard({ records, session, route, loading }) {
                       </td>
                       <td className="date">{date(c.createdAt)}</td>
                       <td>
-                        <a aria-label={"Open case " + c.id} href={"#case/" + c.id}>
+                        <a
+                          aria-label={"Open case " + c.id}
+                          href={"#case/" + c.id}
+                        >
                           <ArrowUpRight size={18} />
                         </a>
                       </td>
@@ -490,7 +589,10 @@ function Dashboard({ records, session, route, loading }) {
                 <button disabled={page === 1} onClick={() => setPage(page - 1)}>
                   Previous
                 </button>
-                <button disabled={page === pages} onClick={() => setPage(page + 1)}>
+                <button
+                  disabled={page === pages}
+                  onClick={() => setPage(page + 1)}
+                >
                   Next
                 </button>
               </div>
@@ -577,7 +679,9 @@ function NewCase({ onCreated }) {
               maxLength={120}
               required
             />
-            {error?.fields?.title && <small className="field-error">{error.fields.title}</small>}
+            {error?.fields?.title && (
+              <small className="field-error">{error.fields.title}</small>
+            )}
           </label>
           <label>
             Business justification
@@ -593,8 +697,8 @@ function NewCase({ onCreated }) {
               <small className="field-error">{error.fields.description}</small>
             )}
             <small>
-              Include approval or receipt details where relevant. Do not include passwords or
-              confidential data.
+              Include approval or receipt details where relevant. Do not include
+              passwords or confidential data.
             </small>
           </label>
           {type === "EXPENSE" ? (
@@ -693,7 +797,8 @@ function Detail({ id, session, onChange }) {
       <div className="page-heading">
         <div>
           <span className="eyebrow">
-            CASE #{String(c.id).padStart(3, "0")} · {label(c.type).toUpperCase()}
+            CASE #{String(c.id).padStart(3, "0")} ·{" "}
+            {label(c.type).toUpperCase()}
           </span>
           <h1>{c.title}</h1>
           <p>
@@ -737,7 +842,9 @@ function Detail({ id, session, onChange }) {
             <h2>Model recommendation</h2>
             <Activity size={21} />
           </div>
-          <strong className="recommendation-label">{label(c.recommendation)}</strong>
+          <strong className="recommendation-label">
+            {label(c.recommendation)}
+          </strong>
           <div className="score-label">
             <span>Model score</span>
             <strong>{Math.round(c.confidence * 100)}%</strong>
@@ -745,7 +852,9 @@ function Detail({ id, session, onChange }) {
           <div className="score-track">
             <span style={{ width: `${c.confidence * 100}%` }} />
           </div>
-          <small>Score indicates model preference, not verified accuracy.</small>
+          <small>
+            Score indicates model preference, not verified accuracy.
+          </small>
           <details className="model-details">
             <summary>Model details</summary>
             <p>{c.explanation}</p>
@@ -753,8 +862,17 @@ function Detail({ id, session, onChange }) {
               Model: {c.modelVersion}
               <br />
               Policy version: {c.policyVersion}
+              <br />
+              {c.policyMinConfidence == null
+                ? "Historical policy snapshot unavailable"
+                : `Saved policy: minimum score ${c.policyMinConfidence}, amount limit ${c.policyAmountThreshold}, mandatory review ${c.policyAlwaysReview ? "yes" : "no"}`}
+              <br />
+              Routing rules: {c.routingVersion || "not recorded"}
             </small>
-            <small>Trained on synthetic examples. Supporting documents are not verified.</small>
+            <small>
+              Trained on synthetic examples. Supporting documents are not
+              verified.
+            </small>
           </details>
         </section>
       </div>
@@ -768,7 +886,9 @@ function Detail({ id, session, onChange }) {
               {data.review.reviewer} · {date(data.review.createdAt)}
             </small>
             {data.review.overridden && (
-              <span className="override">Overrides the model recommendation</span>
+              <span className="override">
+                Overrides the model recommendation
+              </span>
             )}
           </div>
         </section>
@@ -778,7 +898,10 @@ function Detail({ id, session, onChange }) {
           <div className="section-heading">
             <div>
               <h2>Your decision</h2>
-              <p>Review the evidence and record your reasoning. This decision is final.</p>
+              <p>
+                Review the evidence and record your reasoning. This decision is
+                final.
+              </p>
             </div>
             <ShieldCheck />
           </div>
@@ -818,7 +941,8 @@ function Detail({ id, session, onChange }) {
             <button className="primary" disabled={busy}>
               {busy
                 ? "Recording…"
-                : "Record " + (decision === "APPROVED" ? "approval" : "rejection")}
+                : "Record " +
+                  (decision === "APPROVED" ? "approval" : "rejection")}
             </button>
           </div>
         </form>
@@ -877,7 +1001,10 @@ function Notifications({ notices, refresh }) {
       <ErrorBox error={error} />
       <section className="card">
         {!notices.length ? (
-          <Empty title="You're all caught up" detail="New case updates will appear here." />
+          <Empty
+            title="You're all caught up"
+            detail="New case updates will appear here."
+          />
         ) : (
           notices.map((n) => (
             <div key={n.id} className={"notice " + (!n.read ? "unread" : "")}>
@@ -896,6 +1023,61 @@ function Notifications({ notices, refresh }) {
         )}
       </section>
     </>
+  );
+}
+function PolicyHistory({ id }) {
+  const [data, setData] = useState(null),
+    [error, setError] = useState(null),
+    [page, setPage] = useState(0);
+  useEffect(() => {
+    let active = true;
+    request(`/api/admin/policies/${id}/history?page=${page}`)
+      .then((result) => {
+        if (active) setData(result);
+      })
+      .catch((error) => {
+        if (active) setError(error);
+      });
+    return () => {
+      active = false;
+    };
+  }, [id, page]);
+  return (
+    <details className="model-details">
+      <summary>Policy change history</summary>
+      <ErrorBox error={error} />
+      {data?.content.map((change) => (
+        <div key={change.id}>
+          <strong>
+            {change.actor} · {date(change.createdAt)}
+          </strong>
+          <p>Before: {change.beforeValues}</p>
+          <p>After: {change.afterValues}</p>
+        </div>
+      ))}
+      {data && !data.content.length && <p>No policy changes recorded.</p>}
+      {data?.totalPages > 1 && (
+        <div className="pagination">
+          <button
+            type="button"
+            disabled={page === 0}
+            onClick={() => setPage(page - 1)}
+          >
+            Previous
+          </button>
+          <span>
+            {page + 1} / {data.totalPages}
+          </span>
+          <button
+            type="button"
+            disabled={page + 1 >= data.totalPages}
+            onClick={() => setPage(page + 1)}
+          >
+            Next
+          </button>
+        </div>
+      )}
+    </details>
   );
 }
 function Policies() {
@@ -920,7 +1102,9 @@ function Policies() {
         method: "PUT",
         body: JSON.stringify({
           version: p.version,
-          amountThreshold: Number(f.get("amountThreshold") ?? p.amountThreshold),
+          amountThreshold: Number(
+            f.get("amountThreshold") ?? p.amountThreshold,
+          ),
           minConfidence: Number(f.get("minConfidence")),
           alwaysReview: f.has("alwaysReview"),
         }),
@@ -985,7 +1169,11 @@ function Policies() {
               <small>Scores below this value require review. Enter 0–1.</small>
             </label>
             <label className="checkbox">
-              <input type="checkbox" name="alwaysReview" defaultChecked={p.alwaysReview} />
+              <input
+                type="checkbox"
+                name="alwaysReview"
+                defaultChecked={p.alwaysReview}
+              />
               Always require human review
             </label>
             <p className="model-note">
@@ -996,6 +1184,7 @@ function Policies() {
             <button className="primary" disabled={busy === p.id}>
               {busy === p.id ? "Saving…" : "Save policy"}
             </button>
+            <PolicyHistory id={p.id} />
           </form>
         ))}
       </div>

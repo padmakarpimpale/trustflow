@@ -46,16 +46,10 @@ public class CaseService {
         return users.findByUsername(username).orElseThrow();
     }
 
-    public List<CaseRecord> visibleCases(String username) {
-        return user(username).getRole() == Role.SUBMITTER
-            ? cases.findByOwnerUsernameOrderByCreatedAtDesc(username)
-            : cases.findAllByOrderByCreatedAtDesc();
-    }
-
     public CaseRecord findVisible(Long id, String username) {
         CaseRecord record = cases
             .findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Case not found"));
+            .orElseThrow(() -> new RecordNotFoundException("Case not found"));
         if (
             user(username).getRole() == Role.SUBMITTER &&
             !record.getOwner().getUsername().equals(username)
@@ -105,6 +99,10 @@ public class CaseService {
         record.setExplanation(prediction.explanation());
         record.setModelVersion(prediction.modelVersion());
         record.setPolicyVersion(policy.getVersion());
+        record.setPolicyAmountThreshold(policy.getAmountThreshold());
+        record.setPolicyMinConfidence(policy.getMinConfidence());
+        record.setPolicyAlwaysReview(policy.isAlwaysReview());
+        record.setRoutingVersion(TextReviewGuard.VERSION);
         record.setEscalationReason(reason.isEmpty() ? "Within policy: automatic approval" : reason);
         record.setCreatedAt(Instant.now());
         record.setStatus(reason.isEmpty() ? CaseStatus.APPROVED : CaseStatus.PENDING_REVIEW);
@@ -146,16 +144,16 @@ public class CaseService {
         if (reviewer.getRole() != Role.REVIEWER) throw new AccessDeniedException(
             "Reviewer role required"
         );
-        CaseRecord record = cases.findById(id).orElseThrow();
+        CaseRecord record = cases
+            .findById(id)
+            .orElseThrow(() -> new RecordNotFoundException("Case not found"));
         if (record.getOwner().getId().equals(reviewer.getId())) throw new AccessDeniedException(
             "Self review is not allowed"
         );
         if (
             record.getStatus() != CaseStatus.PENDING_REVIEW ||
             !Objects.equals(record.getVersion(), form.version())
-        ) throw new IllegalArgumentException(
-            "Case changed or was already reviewed. Refresh the page."
-        );
+        ) throw new ConflictException("Case changed or was already reviewed. Refresh the page.");
         CaseStatus decision = CaseStatus.valueOf(form.decision());
         if (decision == CaseStatus.PENDING_REVIEW) throw new IllegalArgumentException(
             "Choose approve or reject"
